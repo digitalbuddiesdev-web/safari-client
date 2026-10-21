@@ -5,4 +5,4 @@ Disallow: /account
 Disallow: /login
 Disallow: /register
 
-Sitemap: https://shutterandstripessafaris.com/sitemap.xml
+Sitemap: https://www.shutterandstripessafaris.com/sitemap.xml

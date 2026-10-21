@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://shutterandstripessafaris.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/destinations</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/compare</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/map</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/how-it-works</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/our-story</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/gallery</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/journal</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/responsible-tourism</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/faqs</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://shutterandstripessafaris.com/booking</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/destinations</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/compare</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/map</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/how-it-works</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/our-story</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/gallery</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/journal</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/responsible-tourism</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/faqs</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.shutterandstripessafaris.com/booking</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
