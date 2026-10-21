@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { FOUNDER_NAME, COFOUNDER_NAME, YEARS_OF_EXPERIENCE, TOURS_COMPLETED } from '../lib/site';
 
-// ponytail: co-founder section hidden per client request; flip to true to restore
-const SHOW_COFOUNDER = false;
+// ponytail: co-founder section
+const SHOW_COFOUNDER = true;
 
 export const OurStoryPage: React.FC = () => {
   return (
