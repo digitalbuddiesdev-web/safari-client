@@ -10,10 +10,8 @@ import {
   LogOut, 
   ExternalLink,
   ShieldAlert,
-  ShieldCheck,
   Menu,
   X,
-  Server,
   Database,
   ArrowLeft,
   Users,
@@ -56,15 +54,13 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   }
 
-  // Each module lists the roles the API actually lets it through, so a booking_manager
-  // never sees content modules and a content_manager never sees bookings or inquiries.
   const navItems = [
-    { label: 'Overview and KPIs', path: '/admin', icon: LayoutDashboard, roles: STAFF },
-    { label: 'Booking Leads', path: '/admin/bookings', icon: BookOpen, roles: BOOKING },
-    { label: 'Reserves and Sanctuaries', path: '/admin/destinations', icon: MapPin, roles: CONTENT },
-    { label: 'Safari Packages and Tariffs', path: '/admin/safaris', icon: Compass, roles: CONTENT },
-    { label: 'Traveler Inquiries', path: '/admin/inquiries', icon: MessageSquare, roles: BOOKING },
-    { label: 'CMS and Brand Story', path: '/admin/cms', icon: FileEdit, roles: CONTENT },
+    { label: 'Dashboard', path: '/admin', icon: LayoutDashboard, roles: STAFF },
+    { label: 'Bookings', path: '/admin/bookings', icon: BookOpen, roles: BOOKING },
+    { label: 'Inquiries', path: '/admin/inquiries', icon: MessageSquare, roles: BOOKING },
+    { label: 'Reserves & Sanctuaries', path: '/admin/destinations', icon: MapPin, roles: CONTENT },
+    { label: 'Safari Packages', path: '/admin/safaris', icon: Compass, roles: CONTENT },
+    { label: 'CMS & Brand Story', path: '/admin/cms', icon: FileEdit, roles: CONTENT },
     { label: 'Team Members', path: '/admin/team', icon: Users, roles: SUPER },
     { label: 'Travelers', path: '/admin/travelers', icon: UserCheck, roles: SUPER },
   ].filter(item => item.roles.includes(user.role));
@@ -135,7 +131,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* Navigation Items */}
           <nav className="p-4 space-y-1">
             <span className="text-[10px] uppercase font-bold tracking-widest text-sand/40 block px-3 py-2">
-              Console Modules
+              Menu
             </span>
             {navItems.map(item => {
               const Icon = item.icon;
@@ -195,18 +191,14 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               {currentNav.label}
             </h1>
             <p className="text-forest/60 text-xs mt-0.5">
-              Centralized Forest Department Permit and Reserve Orchestration
+              Shutter and Stripes Admin Panel
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center space-x-4 text-xs">
+          <div className="hidden sm:flex items-center space-x-3 text-xs">
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>API Gateway :5000</span>
-            </div>
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-forest/5 text-forest border border-forest/10 font-semibold">
-              <Database className="w-3.5 h-3.5 text-gold" />
-              <span>MongoDB Active</span>
+              <span>Online</span>
             </div>
           </div>
         </header>
