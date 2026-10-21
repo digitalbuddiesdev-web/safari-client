@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Destination, Safari, Booking, User, GalleryItem, JournalArticle, FAQItem, ReviewItem, SiteSettings } from '../types';
+import { Destination, Safari, Booking, User, GalleryItem, JournalArticle, FAQItem, ReviewItem, SiteSettings, CrmInquiry, CrmBooking, CrmPackage, CrmEmailLog } from '../types';
 
 // Requests go same-origin by default: the browser calls /api/v1 on whatever host serves
 // the app. Locally the Vite dev proxy (vite.config.ts) forwards that to localhost:5000;
@@ -221,5 +221,58 @@ export const adminService = {
   updateUserRole: async (id: string, role?: string, isActive?: boolean) => {
     const res = await api.put(`/admin/users/${id}/role`, { role, isActive });
     return res.data.user;
+  }
+};
+
+// CRM Services — enquiry → package → advance → confirmation → final payment.
+// Booking staff only; the server enforces the same roles.
+export const crmService = {
+  getStats: async () => {
+    const res = await api.get('/crm/stats');
+    return res.data;
+  },
+  listInquiries: async (params?: { status?: string; search?: string }) => {
+    const res = await api.get<{ success: boolean; count: number; inquiries: CrmInquiry[] }>('/crm/inquiries', { params });
+    return res.data.inquiries;
+  },
+  getInquiry: async (id: string) => {
+    const res = await api.get<{ success: boolean; inquiry: CrmInquiry; booking: CrmBooking | null; package: CrmPackage | null; emails: CrmEmailLog[] }>(`/crm/inquiries/${id}`);
+    return res.data;
+  },
+  updateInquiry: async (id: string, data: { assignedTo?: string | null; status?: string; note?: string }) => {
+    const res = await api.put(`/crm/inquiries/${id}`, data);
+    return res.data.inquiry;
+  },
+  savePackage: async (inquiryId: string, data: Partial<CrmPackage>) => {
+    const res = await api.post(`/crm/inquiries/${inquiryId}/package`, data);
+    return res.data; // { package, booking }
+  },
+  listBookings: async (params?: { status?: string; search?: string }) => {
+    const res = await api.get<{ success: boolean; count: number; bookings: CrmBooking[] }>('/crm/bookings', { params });
+    return res.data.bookings;
+  },
+  getBooking: async (id: string) => {
+    const res = await api.get<{ success: boolean; booking: CrmBooking; package: CrmPackage | null; emails: CrmEmailLog[]; outstanding: number; totalPaid: number }>(`/crm/bookings/${id}`);
+    return res.data;
+  },
+  activateAdvance: async (id: string, advanceAmount: number) => {
+    const res = await api.post(`/crm/bookings/${id}/advance-payment`, { advanceAmount });
+    return res.data; // { booking, link }
+  },
+  generateFinal: async (id: string) => {
+    const res = await api.post(`/crm/bookings/${id}/final-payment`);
+    return res.data;
+  },
+  confirmBooking: async (id: string, note?: string) => {
+    const res = await api.post(`/crm/bookings/${id}/confirm`, { note });
+    return res.data;
+  },
+  completeBooking: async (id: string, note?: string) => {
+    const res = await api.post(`/crm/bookings/${id}/complete`, { note });
+    return res.data;
+  },
+  resendEmail: async (id: string, event: string) => {
+    const res = await api.post(`/crm/bookings/${id}/resend-email`, { event });
+    return res.data;
   }
 };

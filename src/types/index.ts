@@ -124,6 +124,96 @@ export interface Booking {
   updatedAt: string;
 }
 
+// ---- Enquiry-to-completed CRM pipeline ----
+export type LeadStatus =
+  | 'new_enquiry' | 'contacted' | 'package_drafted' | 'awaiting_advance_payment'
+  | 'advance_paid' | 'booking_confirmed' | 'awaiting_final_payment' | 'fully_paid'
+  | 'completed' | 'cancelled';
+
+export interface PaymentRecord {
+  _id?: string;
+  paymentId: string;
+  linkId?: string;
+  type: 'advance' | 'final';
+  amount: number;
+  status: 'captured' | 'failed';
+  method?: string;
+  paidAt?: string;
+}
+
+export interface PaymentLinkRecord {
+  _id?: string;
+  linkId: string;
+  shortUrl?: string;
+  type: 'advance' | 'final';
+  amount: number;
+  status: 'active' | 'paid' | 'expired' | 'cancelled';
+  expiresAt?: string;
+  paidAt?: string;
+}
+
+// Booking rows returned by the CRM carry the pipeline fields the permit
+// checkout flow never sets, so they are optional on the shared interface.
+export type CrmBooking = Booking & {
+  inquiry?: string | { _id: string; enquiryId?: string; status?: LeadStatus } | null;
+  package?: string | CrmPackage | null;
+  crmStatus?: LeadStatus;
+  payments?: PaymentRecord[];
+  paymentLinks?: PaymentLinkRecord[];
+  totalPaid?: number;
+  advanceAmount?: number;
+  outstanding?: number;
+  confirmedAt?: string;
+  confirmedBy?: string;
+  statusHistory?: { status?: string; by?: string; note?: string; at?: string }[];
+};
+
+export interface CrmPackage {
+  _id: string;
+  packageRef?: string;
+  inquiry: string;
+  name: string;
+  destinationName: string;
+  travelStartDate: string;
+  travelEndDate?: string;
+  guests: { adults: number; children?: number };
+  itinerary: string;
+  accommodation: string;
+  safariDetails: string;
+  inclusions: string[];
+  exclusions: string[];
+  terms: string;
+  totalPrice: number;
+  status?: 'draft' | 'sent' | 'approved';
+}
+
+export interface CrmInquiry {
+  _id: string;
+  enquiryId?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  destination?: string;
+  travelDate?: string;
+  subject?: string;
+  message: string;
+  status: LeadStatus;
+  assignedTo?: { _id: string; name: string; email?: string } | string | null;
+  booking?: string | null;
+  guests?: number;
+  createdAt: string;
+  notes?: { _id?: string; by?: string; note: string; createdAt?: string }[];
+}
+
+export interface CrmEmailLog {
+  _id: string;
+  event: string;
+  to: string;
+  subject?: string;
+  createdAt: string;
+  sentBy?: string;
+}
+
 export interface User {
   id: string;
   _id?: string;

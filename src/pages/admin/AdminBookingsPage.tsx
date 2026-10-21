@@ -10,16 +10,40 @@ import {
   Eye, 
   X, 
   ShieldCheck, 
-  Printer 
+  Printer,
+  Wallet,
+  BadgeCheck,
+  Send,
+  Link2
 } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
-import { bookingService, destinationService } from '../../services/api';
-import { Booking, Destination } from '../../types';
+import { bookingService, destinationService, crmService } from '../../services/api';
+import { Booking, Destination, CrmBooking, CrmPackage, CrmEmailLog } from '../../types';
 import { useToast } from '../../components/common/Toast';
 import { packagesOf } from '../../lib/site';
+import {
+  LEAD_STATUS_LABELS,
+  LEAD_STATUS_ORDER,
+  leadStatusClass,
+  formatINR,
+  missingPackageFields,
+  advanceError,
+  outstanding,
+  totalPaidOf,
+  activeLinkOf,
+  linkExpiryLabel
+} from '../../lib/crm';
+
+type CrmDetail = {
+  booking: CrmBooking;
+  package: CrmPackage | null;
+  emails: CrmEmailLog[];
+  outstanding: number;
+  totalPaid: number;
+};
 
 export const AdminBookingsPage: React.FC = () => {
-  const { info, error } = useToast();
+  const { info, success, error } = useToast();
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
@@ -35,6 +59,12 @@ export const AdminBookingsPage: React.FC = () => {
   const [sugDestSlug, setSugDestSlug] = useState('');
   const [sugPackage, setSugPackage] = useState('');
   const [sugMessage, setSugMessage] = useState('');
+  // CRM payment workflow
+  const [crm, setCrm] = useState<CrmDetail | null>(null);
+  const [crmLoading, setCrmLoading] = useState(false);
+  const [showAdvance, setShowAdvance] = useState(false);
+  const [advanceAmt, setAdvanceAmt] = useState('');
+  const [crmBusy, setCrmBusy] = useState('');
 
   const fetchBookings = async () => {
     try {
@@ -82,7 +112,54 @@ export const AdminBookingsPage: React.FC = () => {
     setSugDestSlug(b.suggestion?.destinationSlug || '');
     setSugPackage(b.suggestion?.packageLabel || '');
     setSugMessage(b.suggestion?.message || '');
+    setShowAdvance(false);
+    setCrm(null);
+    setCrmLoading(true);
+    crmService.getBooking(b._id)
+      .then(setCrm)
+      .catch(() => setCrm(null)) // a permit-only booking has no pipeline record yet
+      .finally(() => setCrmLoading(false));
   };
+
+  const refreshCrm = async (id: string) => {
+    try { setCrm(await crmService.getBooking(id)); } catch { /* keep what we have */ }
+    await fetchBookings();
+  };
+
+  // Every CRM action funnels through here: one busy label, one toast, one refresh.
+  const act = async (busyLabel: string, okMsg: string, fn: () => Promise<void>) => {
+    if (!selectedBooking) return;
+    setCrmBusy(busyLabel);
+    try {
+      await fn();
+      await refreshCrm(selectedBooking._id);
+      success(okMsg);
+    } catch (err: any) {
+      error(err.response?.data?.message || 'Action failed.');
+    } finally {
+      setCrmBusy('');
+    }
+  };
+
+  const handleRequestAdvance = () => {
+    const pkg = crm?.package;
+    const invalid = advanceError(advanceAmt, pkg?.totalPrice || 0);
+    if (invalid) { error(invalid); return; }
+    act('advance', 'Advance payment link emailed to the traveler.',
+      async () => { await crmService.activateAdvance(selectedBooking!._id, Number(advanceAmt)); setShowAdvance(false); setAdvanceAmt(''); });
+  };
+
+  const handleConfirm = () => act('confirm', 'Booking confirmed. Balance link and confirmation email sent.',
+    async () => { await crmService.confirmBooking(selectedBooking!._id); });
+
+  const handleFinalLink = () => act('final', 'Balance payment link emailed to the traveler.',
+    async () => { await crmService.generateFinal(selectedBooking!._id); });
+
+  const handleComplete = () => act('complete', 'Booking marked as completed.',
+    async () => { await crmService.completeBooking(selectedBooking!._id); });
+
+  const handleResend = (event: string) => act('resend', 'Email resent to the traveler.',
+    async () => { await crmService.resendEmail(selectedBooking!._id, event); });
 
   const handleSuggest = async () => {
     if (!selectedBooking) return;
@@ -129,6 +206,21 @@ export const AdminBookingsPage: React.FC = () => {
       setUpdatingId(null);
     }
   };
+
+  // Derived pipeline gates — same rules the API enforces, so the buttons never
+  // promise an action the server will refuse.
+  const crmBooking = crm?.booking as CrmBooking | undefined;
+  const crmPkg = crm?.package || null;
+  const crmMissing = missingPackageFields(crmPkg);
+  const crmPayments = crmBooking?.payments || [];
+  const crmLinks = crmBooking?.paymentLinks || [];
+  const hasAdvance = crmPayments.some(p => p.type === 'advance' && p.status === 'captured');
+  const crmStatus = crmBooking?.crmStatus;
+  const canRequestAdvance = !!crm && crmMissing.length === 0 && !hasAdvance;
+  const canConfirm = crmStatus === 'advance_paid';
+  const canFinalLink = (crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment')
+    && (crm?.outstanding ?? 0) > 0.5;
+  const canComplete = crmStatus === 'fully_paid';
 
   return (
     <AdminLayout>
@@ -207,6 +299,7 @@ export const AdminBookingsPage: React.FC = () => {
                     <th className="p-4 font-semibold">Tariff</th>
                     <th className="p-4 font-semibold">Booking Status</th>
                     <th className="p-4 font-semibold">Payment</th>
+                    <th className="p-4 font-semibold">Pipeline</th>
                     <th className="p-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
@@ -250,6 +343,18 @@ export const AdminBookingsPage: React.FC = () => {
                           <option value="completed">Completed</option>
                           <option value="rejected">Rejected</option>
                         </select>
+                      </td>
+                      <td className="p-4">
+                        {(() => {
+                          const cs = (b as CrmBooking).crmStatus;
+                          return cs ? (
+                            <span className={`inline-block px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${leadStatusClass(cs)}`}>
+                              {LEAD_STATUS_LABELS[cs] || cs}
+                            </span>
+                          ) : (
+                            <span className="text-forest/40 text-[10px] uppercase">—</span>
+                          );
+                        })()}
                       </td>
                       <td className="p-4">
                         <select
@@ -399,6 +504,206 @@ export const AdminBookingsPage: React.FC = () => {
                 </div>
               )}
 
+              {/* ---- Payment workflow (enquiry-to-completed pipeline) ---- */}
+              <div className="border-t border-forest/10 pt-4 space-y-4 print:hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-forest/60 flex items-center gap-1.5">
+                    <Wallet className="w-3.5 h-3.5" /> Payment Workflow
+                  </span>
+                  {crmLoading ? (
+                    <span className="text-[11px] text-forest/50">Loading pipeline...</span>
+                  ) : crmStatus ? (
+                    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${leadStatusClass(crmStatus)}`}>
+                      {LEAD_STATUS_LABELS[crmStatus] || crmStatus}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-forest/50">No enquiry pipeline on this booking</span>
+                  )}
+                </div>
+
+                {crmLoading ? null : crm && crmBooking ? (
+                  <div className="space-y-4 text-xs">
+                    {/* Package the price came from */}
+                    {crmPkg ? (
+                      <div className="p-4 bg-sand/30 rounded-xl space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-forest text-sm">{crmPkg.name}</span>
+                          <span className="font-serif font-bold text-forest">{formatINR(crmPkg.totalPrice)}</span>
+                        </div>
+                        <div className="text-forest/70">
+                          {crmPkg.packageRef} · {crmPkg.destinationName} · {crmPkg.travelStartDate}
+                          {crmPkg.travelEndDate ? ` → ${crmPkg.travelEndDate}` : ''}
+                        </div>
+                        {crmMissing.length > 0 ? (
+                          <p className="text-amber-700 pt-1">
+                            Advance payment is locked until the package is complete: {crmMissing.join(', ')}.
+                          </p>
+                        ) : (
+                          <p className="text-emerald-700 font-semibold pt-1 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Package complete.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
+                        No package has been drafted for this enquiry yet — open the enquiry to draft one.
+                      </div>
+                    )}
+
+                    {/* Money ledger */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-3 bg-sand/40 rounded-xl">
+                        <div className="text-[10px] uppercase text-forest/50 font-bold">Package</div>
+                        <div className="font-serif font-bold text-forest">{formatINR(crmBooking.totalAmount)}</div>
+                      </div>
+                      <div className="p-3 bg-emerald-50 rounded-xl">
+                        <div className="text-[10px] uppercase text-emerald-700 font-bold">Received</div>
+                        <div className="font-serif font-bold text-emerald-800">{formatINR(totalPaidOf(crmPayments))}</div>
+                      </div>
+                      <div className="p-3 bg-amber-50 rounded-xl">
+                        <div className="text-[10px] uppercase text-amber-700 font-bold">Balance</div>
+                        <div className="font-serif font-bold text-amber-800">{formatINR(outstanding(crmBooking.totalAmount, crmPayments))}</div>
+                      </div>
+                    </div>
+
+                    {/* Payments received */}
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-forest/60 block mb-1.5">Payments Received</span>
+                      {crmPayments.length === 0 ? (
+                        <p className="text-forest/50 text-[11px]">Nothing captured yet — verification happens on the webhook, never in the browser.</p>
+                      ) : (
+                        <div className="border border-forest/10 rounded-xl overflow-hidden">
+                          <table className="w-full text-[11px] text-left">
+                            <thead className="bg-sand/40 text-forest/60 uppercase text-[9px]">
+                              <tr>
+                                <th className="p-2">Instalment</th>
+                                <th className="p-2">Amount</th>
+                                <th className="p-2">Method</th>
+                                <th className="p-2">Paid</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-forest/5 text-forest/80">
+                              {crmPayments.map((p, i) => (
+                                <tr key={p.paymentId || i}>
+                                  <td className="p-2 font-semibold capitalize">{p.type}</td>
+                                  <td className="p-2 font-bold text-forest">{formatINR(p.amount)}</td>
+                                  <td className="p-2 uppercase">{p.method || '—'}</td>
+                                  <td className="p-2 text-forest/60">{p.paidAt ? new Date(p.paidAt).toLocaleString() : '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Payment links, with the 24h expiry made visible */}
+                    {crmLinks.length > 0 && (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-forest/60 block mb-1.5">Payment Links (24h)</span>
+                        <div className="space-y-1.5">
+                          {crmLinks.map((l, i) => (
+                            <div key={l.linkId || i} className="flex items-center justify-between gap-2 p-2.5 bg-sand/30 rounded-lg">
+                              <div className="min-w-0">
+                                <span className="font-semibold uppercase text-forest">{l.type}</span>{' '}
+                                <span className="text-forest/70">{formatINR(l.amount)}</span>
+                                <div className="text-[10px] text-forest/50 truncate">{l.shortUrl}</div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase ${
+                                  l.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                  : l.status === 'active' ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                  : 'bg-sand text-forest/60 border-forest/20'}`}>
+                                  {l.status}
+                                </span>
+                                {l.status === 'active' && (
+                                  <div className="text-[9px] text-forest/50">{linkExpiryLabel(l.expiresAt)}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        onClick={() => setShowAdvance(true)}
+                        disabled={crmBusy !== '' || !canRequestAdvance}
+                        title={crmMissing.length ? 'Complete the package first' : undefined}
+                        className="px-4 py-2 bg-forest text-sand rounded-lg font-semibold hover:bg-forest/90 transition disabled:opacity-40 flex items-center gap-1.5"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                        {crmBusy === 'advance' ? 'Issuing...' : hasAdvance ? 'Advance Received' : 'Request Advance Payment'}
+                      </button>
+
+                      <button
+                        onClick={handleConfirm}
+                        disabled={crmBusy !== '' || !canConfirm}
+                        title="Requires the advance to be received. Confirmation is never automatic."
+                        className="px-4 py-2 bg-gold text-forest rounded-lg font-semibold hover:brightness-95 transition disabled:opacity-40 flex items-center gap-1.5"
+                      >
+                        <BadgeCheck className="w-3.5 h-3.5" />
+                        {crmBusy === 'confirm' ? 'Confirming...' : 'Confirm Booking'}
+                      </button>
+
+                      <button
+                        onClick={handleFinalLink}
+                        disabled={crmBusy !== '' || !canFinalLink}
+                        className="px-4 py-2 bg-sand border border-forest/25 text-forest rounded-lg font-semibold hover:bg-gold transition disabled:opacity-40 flex items-center gap-1.5"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        {crmBusy === 'final' ? 'Sending...' : 'Send / Re-send Balance Link'}
+                      </button>
+
+                      <button
+                        onClick={handleComplete}
+                        disabled={crmBusy !== '' || !canComplete}
+                        title="Only a fully paid booking can be completed."
+                        className="px-4 py-2 border border-forest/25 text-forest rounded-lg font-semibold hover:bg-sand transition disabled:opacity-40"
+                      >
+                        {crmBusy === 'complete' ? 'Saving...' : 'Mark Completed'}
+                      </button>
+                    </div>
+
+                    {/* Resend past emails without touching payments */}
+                    <div className="flex items-end gap-2 pt-1 border-t border-forest/10">
+                      <label className="block flex-1">
+                        <span className="text-[10px] uppercase font-bold text-forest/60 block mb-1">Resend Email</span>
+                        <select
+                          id="resend-event"
+                          defaultValue=""
+                          className="w-full px-3 py-2 border border-forest/20 rounded-lg bg-white text-forest"
+                        >
+                          <option value="" disabled>Choose an email...</option>
+                          <option value="advance_payment_request">Advance payment request</option>
+                          <option value="booking_confirmation">Booking confirmation</option>
+                          <option value="final_payment_confirmation">Final payment confirmation</option>
+                        </select>
+                      </label>
+                      <button
+                        onClick={() => {
+                          const sel = document.getElementById('resend-event') as HTMLSelectElement | null;
+                          if (!sel?.value) { error('Choose an email to resend.'); return; }
+                          handleResend(sel.value);
+                        }}
+                        disabled={crmBusy !== ''}
+                        className="px-4 py-2 border border-forest/25 text-forest rounded-lg font-semibold hover:bg-sand transition disabled:opacity-40"
+                      >
+                        {crmBusy === 'resend' ? 'Sending...' : 'Resend'}
+                      </button>
+                    </div>
+
+                    {crm.emails?.length > 0 && (
+                      <p className="text-[10px] text-forest/50">
+                        {crm.emails.length} email(s) logged for this booking (duplicates are suppressed by dedupe key).
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
               <div className="flex items-center justify-between pt-4 border-t border-forest/10 text-xs">
                 <div>
                   <span className="text-forest/60 block">Total Tariff:</span>
@@ -419,6 +724,82 @@ export const AdminBookingsPage: React.FC = () => {
                     Close
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Advance amount dialog: package amount, advance in, balance out */}
+        {showAdvance && crmPkg && (
+          <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl border border-forest/20 p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-forest/10 pb-3">
+                <div>
+                  <h4 className="font-serif text-xl font-bold text-forest">Request Advance Payment</h4>
+                  <span className="text-forest/60 text-[11px]">A 24-hour Razorpay link is emailed to the traveler.</span>
+                </div>
+                <button onClick={() => setShowAdvance(false)} className="p-1 rounded-full text-forest/40 hover:text-forest">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-4 bg-sand/40 rounded-xl text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-forest/70">Package amount</span>
+                  <span className="font-serif font-bold text-forest text-base">{formatINR(crmPkg.totalPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-forest/70">Already received</span>
+                  <span className="font-semibold text-emerald-800">{formatINR(totalPaidOf(crmPayments))}</span>
+                </div>
+              </div>
+
+              <label className="block text-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-forest/60">Advance amount <span className="text-red-500">*</span></span>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-forest/60">₹</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={advanceAmt}
+                    onChange={e => setAdvanceAmt(e.target.value)}
+                    autoFocus
+                    placeholder="e.g. 50000"
+                    className="w-full pl-7 pr-3 py-2.5 border border-forest/20 rounded-xl bg-white text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                  />
+                </div>
+              </label>
+
+              <div className="flex items-center justify-between p-3 bg-forest/5 rounded-xl text-xs">
+                <span className="text-forest/70">Remaining balance after advance</span>
+                <span className="font-serif font-bold text-forest text-base">
+                  {formatINR(Math.max(0, (Number(advanceAmt) > 0 ? crmPkg.totalPrice - Number(advanceAmt) : crmPkg.totalPrice)))}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-forest/60">
+                Advance must be greater than ₹0 and cannot exceed the package amount. Payment is confirmed by webhook only — booking confirmation stays a separate team action.
+              </p>
+
+              {(() => {
+                const invalid = advanceAmt === '' ? null : advanceError(advanceAmt, crmPkg.totalPrice);
+                return invalid ? <p className="text-[11px] text-red-600 font-semibold">{invalid}</p> : null;
+              })()}
+
+              <div className="flex gap-2 justify-end pt-2 border-t border-forest/10">
+                <button
+                  onClick={() => setShowAdvance(false)}
+                  className="px-4 py-2 border border-forest/20 text-forest rounded-xl font-semibold hover:bg-sand transition text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRequestAdvance}
+                  disabled={crmBusy !== '' || advanceAmt === ''}
+                  className="px-5 py-2 bg-forest text-sand rounded-xl font-bold uppercase tracking-wider text-xs disabled:opacity-40"
+                >
+                  {crmBusy === 'advance' ? 'Issuing link...' : 'Generate & Email Link'}
+                </button>
               </div>
             </div>
           </div>

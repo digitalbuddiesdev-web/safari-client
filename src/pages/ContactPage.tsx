@@ -32,6 +32,7 @@ export const ContactPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [enquiryId, setEnquiryId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,7 +44,8 @@ export const ContactPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      await cmsService.submitInquiry(formData);
+      const res = await cmsService.submitInquiry(formData);
+      setEnquiryId(res?.inquiry?.enquiryId || '');
       setSubmitted(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to submit inquiry. Please try again.');
@@ -154,9 +156,15 @@ export const ContactPage: React.FC = () => {
                   <p className="text-forest/70 text-sm max-w-md mx-auto leading-relaxed">
                     Thank you for reaching out to Shutter And Stripes. A lead naturalist has received your dispatch and will respond via email or phone within 4 business hours.
                   </p>
+                  {enquiryId && (
+                    <p className="inline-block px-4 py-2 rounded-xl bg-forest/10 border border-forest/20 text-forest text-xs font-mono font-semibold">
+                      Enquiry ID: {enquiryId} — quote it in any follow-up.
+                    </p>
+                  )}
                   <button
                     onClick={() => {
                       setSubmitted(false);
+                      setEnquiryId('');
                       setFormData({
                         name: '',
                         email: '',
