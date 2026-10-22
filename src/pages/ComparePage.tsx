@@ -40,7 +40,7 @@ export const ComparePage: React.FC = () => {
           setSelectedSlugs(slugs.slice(0, 3));
         } else if (data.length >= 2) {
           // Default compare Kanha and Tadoba
-          const defaultSlugs = ['kanha-tiger-reserve', 'tadoba-andhari-tiger-reserve'];
+          const defaultSlugs = ['kanha', 'tadoba-andhari'];
           setSelectedSlugs(defaultSlugs);
           setSearchParams({ reserves: defaultSlugs.join(',') });
         }

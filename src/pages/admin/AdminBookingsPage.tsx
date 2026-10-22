@@ -14,9 +14,13 @@ import {
   Wallet,
   BadgeCheck,
   Send,
-  Link2
+  Link2,
+  Phone,
+  Share2,
+  Copy
 } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
+import { WorkflowStepper } from '../../components/admin/WorkflowStepper';
 import { bookingService, destinationService, crmService } from '../../services/api';
 import { Booking, Destination, CrmBooking, CrmPackage, CrmEmailLog } from '../../types';
 import { useToast } from '../../components/common/Toast';
@@ -26,12 +30,13 @@ import {
   LEAD_STATUS_ORDER,
   leadStatusClass,
   formatINR,
-  missingPackageFields,
   advanceError,
   outstanding,
   totalPaidOf,
   activeLinkOf,
-  linkExpiryLabel
+  linkExpiryLabel,
+  getWhatsAppUrl,
+  generateWhatsAppBookingSummary
 } from '../../lib/crm';
 
 type CrmDetail = {
@@ -40,6 +45,7 @@ type CrmDetail = {
   emails: CrmEmailLog[];
   outstanding: number;
   totalPaid: number;
+  missingFields: string[];
 };
 
 export const AdminBookingsPage: React.FC = () => {
@@ -142,9 +148,7 @@ export const AdminBookingsPage: React.FC = () => {
   };
 
   const handleRequestAdvance = () => {
-    const pkg = crm?.package;
-    const invalid = advanceError(advanceAmt, pkg?.totalPrice || 0);
-    if (invalid) { error(invalid); return; }
+    if (advanceInvalid) { error(advanceInvalid); return; }
     act('advance', 'Advance payment link emailed to the traveler.',
       async () => { await crmService.activateAdvance(selectedBooking!._id, Number(advanceAmt)); setShowAdvance(false); setAdvanceAmt(''); });
   };
@@ -207,11 +211,20 @@ export const AdminBookingsPage: React.FC = () => {
     }
   };
 
+  const handleCopyWhatsAppSummary = () => {
+    if (!selectedBooking) return;
+    const activeLink = activeLinkOf(crmLinks, 'advance')?.shortUrl || activeLinkOf(crmLinks, 'final')?.shortUrl;
+    const summary = generateWhatsAppBookingSummary(selectedBooking, crmPkg, activeLink);
+    navigator.clipboard.writeText(summary);
+    success('Copied Safari Booking Summary to clipboard! Ready to paste into WhatsApp.');
+  };
+
   // Derived pipeline gates — same rules the API enforces, so the buttons never
-  // promise an action the server will refuse.
+  // promise an action the server will refuse. The completeness list comes from
+  // the server (crm.missingFields), so it can never drift from the API.
   const crmBooking = crm?.booking as CrmBooking | undefined;
   const crmPkg = crm?.package || null;
-  const crmMissing = missingPackageFields(crmPkg);
+  const crmMissing = crm?.missingFields || [];
   const crmPayments = crmBooking?.payments || [];
   const crmLinks = crmBooking?.paymentLinks || [];
   const hasAdvance = crmPayments.some(p => p.type === 'advance' && p.status === 'captured');
@@ -221,6 +234,9 @@ export const AdminBookingsPage: React.FC = () => {
   const canFinalLink = (crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment')
     && (crm?.outstanding ?? 0) > 0.5;
   const canComplete = crmStatus === 'fully_paid';
+  // The typed advance must be payable before the button goes live, so the
+  // inline error and the button always agree.
+  const advanceInvalid = advanceAmt === '' ? null : advanceError(advanceAmt, crmPkg?.totalPrice || 0);
 
   return (
     <AdminLayout>
@@ -258,19 +274,27 @@ export const AdminBookingsPage: React.FC = () => {
             </form>
           </div>
 
-          {/* Filter Pills */}
+          {/* Filter Pills with 5-Step Pipeline Mapping */}
           <div className="flex items-center space-x-2 overflow-x-auto pt-2 border-t border-forest/10 text-xs">
-            {['all', 'pending', 'under_review', 'alternative_suggested', 'confirmed', 'payment_pending', 'paid', 'cancelled', 'completed', 'rejected'].map(st => (
+            {[
+              { id: 'all', label: 'All Bookings' },
+              { id: 'under_review', label: 'Step 3: Awaiting Advance' },
+              { id: 'pending', label: 'Step 4: Advance Paid' },
+              { id: 'confirmed', label: 'Step 4: Confirmed' },
+              { id: 'paid', label: 'Step 5: Fully Paid' },
+              { id: 'completed', label: 'Step 5: Completed' },
+              { id: 'cancelled', label: 'Cancelled' }
+            ].map(st => (
               <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
+                key={st.id}
+                onClick={() => setStatusFilter(st.id)}
                 className={`px-3 py-1.5 rounded-lg uppercase tracking-wider font-semibold transition whitespace-nowrap ${
-                  statusFilter === st 
-                    ? 'bg-forest text-sand' 
+                  statusFilter === st.id 
+                    ? 'bg-forest text-sand shadow-xs' 
                     : 'text-forest/70 hover:bg-sand/60'
                 }`}
               >
-                {st}
+                {st.label}
               </button>
             ))}
           </div>
@@ -369,13 +393,26 @@ export const AdminBookingsPage: React.FC = () => {
                         </select>
                       </td>
                       <td className="p-4 text-right">
-                        <button
-                          onClick={() => openBooking(b)}
-                          className="p-1.5 rounded-lg bg-sand hover:bg-forest hover:text-sand text-forest transition"
-                          title="View Full Application"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {b.customerInfo.phone && (
+                            <a
+                              href={getWhatsAppUrl(b.customerInfo.phone, `Hello ${b.customerInfo.fullName.split(' ')[0]}! This is Sachin from Shutter & Stripes regarding your booking #${b.bookingRef} for ${b.destinationName}.`)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition shadow-sm"
+                              title="Chat on WhatsApp"
+                            >
+                              <span>WhatsApp</span>
+                            </a>
+                          )}
+                          <button
+                            onClick={() => openBooking(b)}
+                            className="p-1.5 rounded-lg bg-sand hover:bg-forest hover:text-sand text-forest transition"
+                            title="View Full Application"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -402,12 +439,27 @@ export const AdminBookingsPage: React.FC = () => {
                 </button>
               </div>
 
+              {/* 5-Step Pipeline Progress Stepper */}
+              <WorkflowStepper status={crmStatus || selectedBooking.bookingStatus} />
+
               <div className="grid grid-cols-2 gap-4 text-xs font-sans">
                 <div className="p-4 bg-sand/30 rounded-xl space-y-1">
                   <span className="text-[10px] uppercase font-bold text-forest/50 block">Customer Information</span>
                   <div className="font-bold text-forest text-sm">{selectedBooking.customerInfo.fullName}</div>
                   <div>Email: {selectedBooking.customerInfo.email}</div>
-                  <div>Phone: {selectedBooking.customerInfo.phone}</div>
+                  <div className="flex items-center justify-between">
+                    <div>Phone: {selectedBooking.customerInfo.phone}</div>
+                    {selectedBooking.customerInfo.phone && (
+                      <a
+                        href={getWhatsAppUrl(selectedBooking.customerInfo.phone, `Hello ${selectedBooking.customerInfo.fullName.split(' ')[0]}! This is Sachin from Shutter & Stripes regarding your booking #${selectedBooking.bookingRef} for ${selectedBooking.destinationName}.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition shadow-sm"
+                      >
+                        <span>WhatsApp</span>
+                      </a>
+                    )}
+                  </div>
                   <div>Country: {selectedBooking.customerInfo.country}</div>
                   <div>ID Type: {selectedBooking.customerInfo.idType}</div>
                   <div>ID Number: <strong>{selectedBooking.customerInfo.idNumber}</strong></div>
@@ -607,7 +659,22 @@ export const AdminBookingsPage: React.FC = () => {
                               <div className="min-w-0">
                                 <span className="font-semibold uppercase text-forest">{l.type}</span>{' '}
                                 <span className="text-forest/70">{formatINR(l.amount)}</span>
-                                <div className="text-[10px] text-forest/50 truncate">{l.shortUrl}</div>
+                                <div className="text-[10px] text-forest/50 truncate flex items-center gap-1.5 mt-0.5">
+                                  <span className="truncate">{l.shortUrl}</span>
+                                  {l.shortUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(l.shortUrl!);
+                                        success('Copied payment link to clipboard!');
+                                      }}
+                                      className="p-0.5 hover:bg-forest/10 rounded text-forest/60 hover:text-forest transition"
+                                      title="Copy payment link"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <div className="text-right shrink-0">
                                 <span className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase ${
@@ -626,45 +693,163 @@ export const AdminBookingsPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <button
-                        onClick={() => setShowAdvance(true)}
-                        disabled={crmBusy !== '' || !canRequestAdvance}
-                        title={crmMissing.length ? 'Complete the package first' : undefined}
-                        className="px-4 py-2 bg-forest text-sand rounded-lg font-semibold hover:bg-forest/90 transition disabled:opacity-40 flex items-center gap-1.5"
-                      >
-                        <Link2 className="w-3.5 h-3.5" />
-                        {crmBusy === 'advance' ? 'Issuing...' : hasAdvance ? 'Advance Received' : 'Request Advance Payment'}
-                      </button>
+                    {/* 5-Step Operational Actions (Steps 3, 4, 5) */}
+                    <div className="space-y-3 pt-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-forest/70 flex items-center justify-between">
+                        <span>Workflow Operations</span>
+                        <span className="text-[10px] text-forest/50 font-normal">Aligned with 5-Step Website Flow</span>
+                      </div>
 
-                      <button
-                        onClick={handleConfirm}
-                        disabled={crmBusy !== '' || !canConfirm}
-                        title="Requires the advance to be received. Confirmation is never automatic."
-                        className="px-4 py-2 bg-gold text-forest rounded-lg font-semibold hover:brightness-95 transition disabled:opacity-40 flex items-center gap-1.5"
-                      >
-                        <BadgeCheck className="w-3.5 h-3.5" />
-                        {crmBusy === 'confirm' ? 'Confirming...' : 'Confirm Booking'}
-                      </button>
+                      {/* Step 3 Card: Advance Payment */}
+                      <div className={`p-4 rounded-2xl border transition ${
+                        hasAdvance 
+                          ? 'bg-emerald-50/60 border-emerald-200' 
+                          : canRequestAdvance 
+                          ? 'bg-white border-forest/20 shadow-xs' 
+                          : 'bg-sand/20 border-forest/10 opacity-80'
+                      }`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                hasAdvance ? 'bg-emerald-600 text-white' : 'bg-forest/10 text-forest'
+                              }`}>
+                                {hasAdvance ? '✓' : '3'}
+                              </span>
+                              <h5 className="font-bold text-forest text-sm">Step 3: Advance Payment</h5>
+                              {hasAdvance && (
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                  Advance Paid
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-forest/70 max-w-md">
+                              {hasAdvance 
+                                ? 'Advance received and verified by Razorpay webhook. Payment receipt automatically emailed to customer.'
+                                : crmMissing.length > 0
+                                ? `Package incomplete: please complete ${crmMissing.join(', ')} before requesting advance.`
+                                : 'Manually set the advance amount in the pop-up. Customer receives booking details & 24h Razorpay link via email.'}
+                            </p>
+                          </div>
 
-                      <button
-                        onClick={handleFinalLink}
-                        disabled={crmBusy !== '' || !canFinalLink}
-                        className="px-4 py-2 bg-sand border border-forest/25 text-forest rounded-lg font-semibold hover:bg-gold transition disabled:opacity-40 flex items-center gap-1.5"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        {crmBusy === 'final' ? 'Sending...' : 'Send / Re-send Balance Link'}
-                      </button>
+                          {!hasAdvance && (
+                            <button
+                              onClick={() => setShowAdvance(true)}
+                              disabled={crmBusy !== '' || !canRequestAdvance}
+                              className="shrink-0 px-4 py-2.5 bg-forest text-sand rounded-xl font-bold text-xs hover:bg-forest/90 transition disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
+                            >
+                              <Link2 className="w-3.5 h-3.5" />
+                              {crmBusy === 'advance' ? 'Issuing...' : 'Set Advance & Send Link'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-                      <button
-                        onClick={handleComplete}
-                        disabled={crmBusy !== '' || !canComplete}
-                        title="Only a fully paid booking can be completed."
-                        className="px-4 py-2 border border-forest/25 text-forest rounded-lg font-semibold hover:bg-sand transition disabled:opacity-40"
-                      >
-                        {crmBusy === 'complete' ? 'Saving...' : 'Mark Completed'}
-                      </button>
+                      {/* Step 4 Card: Booking Confirmation */}
+                      <div className={`p-4 rounded-2xl border transition ${
+                        crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment' || crmStatus === 'fully_paid' || crmStatus === 'completed'
+                          ? 'bg-emerald-50/60 border-emerald-200'
+                          : canConfirm
+                          ? 'bg-gold/15 border-gold/40 shadow-xs'
+                          : 'bg-sand/20 border-forest/10 opacity-70'
+                      }`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment' || crmStatus === 'fully_paid' || crmStatus === 'completed'
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-forest/10 text-forest'
+                              }`}>
+                                {crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment' || crmStatus === 'fully_paid' || crmStatus === 'completed' ? '✓' : '4'}
+                              </span>
+                              <h5 className="font-bold text-forest text-sm">Step 4: Booking Confirmation</h5>
+                              {(crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment') && (
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                                  Confirmed by Team
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-forest/70 max-w-md">
+                              {canConfirm
+                                ? 'Advance received! Confirming will lock the safari, trigger the update email, and generate a 24h Razorpay link for remaining balance.'
+                                : (crmStatus === 'booking_confirmed' || crmStatus === 'awaiting_final_payment')
+                                ? 'Booking confirmed by team. Update email & balance payment link have been dispatched to customer.'
+                                : 'Requires advance payment to be completed first before confirmation.'}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {canConfirm && (
+                              <button
+                                onClick={handleConfirm}
+                                disabled={crmBusy !== ''}
+                                className="px-4 py-2.5 bg-gold text-forest rounded-xl font-bold text-xs hover:brightness-95 transition disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
+                              >
+                                <BadgeCheck className="w-3.5 h-3.5" />
+                                {crmBusy === 'confirm' ? 'Confirming...' : 'Confirm Booking'}
+                              </button>
+                            )}
+
+                            {canFinalLink && (
+                              <button
+                                onClick={handleFinalLink}
+                                disabled={crmBusy !== ''}
+                                title="Generate a fresh 24h link for the outstanding balance"
+                                className="px-3.5 py-2 bg-sand border border-forest/25 text-forest rounded-xl font-semibold text-xs hover:bg-gold transition disabled:opacity-40 flex items-center gap-1.5"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                {crmBusy === 'final' ? 'Sending...' : 'Resend Balance Link'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 5 Card: Final Payment and Booking Details */}
+                      <div className={`p-4 rounded-2xl border transition ${
+                        crmStatus === 'fully_paid' || crmStatus === 'completed'
+                          ? 'bg-emerald-50/60 border-emerald-200'
+                          : 'bg-sand/20 border-forest/10 opacity-70'
+                      }`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                crmStatus === 'fully_paid' || crmStatus === 'completed' ? 'bg-emerald-600 text-white' : 'bg-forest/10 text-forest'
+                              }`}>
+                                {crmStatus === 'completed' ? '✓' : '5'}
+                              </span>
+                              <h5 className="font-bold text-forest text-sm">Step 5: Final Payment & Documents</h5>
+                              {crmStatus === 'fully_paid' && (
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                  100% Paid
+                                </span>
+                              )}
+                              {crmStatus === 'completed' && (
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-forest text-sand">
+                                  Safari Completed
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-forest/70 max-w-md">
+                              {crmStatus === 'fully_paid' || crmStatus === 'completed'
+                                ? 'Final payment completed. Traveler has received final email with full booking details, documents, and final receipt.'
+                                : 'Pending balance payment. Once paid via Razorpay, traveler automatically receives final email with itinerary and receipts.'}
+                            </p>
+                          </div>
+
+                          {canComplete && (
+                            <button
+                              onClick={handleComplete}
+                              disabled={crmBusy !== ''}
+                              className="shrink-0 px-4 py-2.5 bg-forest text-sand rounded-xl font-bold text-xs hover:bg-forest/90 transition disabled:opacity-40 shadow-sm"
+                            >
+                              {crmBusy === 'complete' ? 'Saving...' : 'Mark Safari Completed'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Resend past emails without touching payments */}
@@ -709,17 +894,25 @@ export const AdminBookingsPage: React.FC = () => {
                   <span className="text-forest/60 block">Total Tariff:</span>
                   <span className="font-serif text-2xl font-bold text-forest">₹{selectedBooking.totalAmount.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex space-x-2 print:hidden">
+                <div className="flex flex-wrap items-center gap-2 print:hidden">
+                  <button
+                    onClick={handleCopyWhatsAppSummary}
+                    className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs flex items-center space-x-1.5 transition shadow"
+                    title="Copy full safari details formatted for WhatsApp"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Copy WhatsApp Summary</span>
+                  </button>
                   <button
                     onClick={() => window.print()}
-                    className="px-4 py-2 border border-forest/20 text-forest rounded-xl font-semibold hover:bg-sand transition flex items-center space-x-1.5"
+                    className="px-3.5 py-2 border border-forest/20 text-forest rounded-xl font-semibold hover:bg-sand transition flex items-center space-x-1.5"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    <span>Print Dossier</span>
+                    <span>Print</span>
                   </button>
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="px-5 py-2 bg-forest text-sand rounded-xl font-bold uppercase tracking-wider hover:bg-forest/90 transition shadow"
+                    className="px-4 py-2 bg-forest text-sand rounded-xl font-bold uppercase tracking-wider hover:bg-forest/90 transition shadow"
                   >
                     Close
                   </button>
@@ -770,6 +963,29 @@ export const AdminBookingsPage: React.FC = () => {
                 </div>
               </label>
 
+              {/* Quick % Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-forest/50 font-bold uppercase mr-1">Quick %:</span>
+                {[
+                  { label: '25%', frac: 0.25 },
+                  { label: '33%', frac: 0.3333 },
+                  { label: '50%', frac: 0.50 },
+                  { label: 'Full', frac: 1.0 }
+                ].map(p => {
+                  const val = Math.round(crmPkg.totalPrice * p.frac);
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setAdvanceAmt(String(val))}
+                      className="px-2.5 py-1 bg-sand/60 hover:bg-gold text-forest rounded-lg text-[11px] font-semibold transition shadow-xs"
+                    >
+                      {p.label} (₹{val.toLocaleString('en-IN')})
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="flex items-center justify-between p-3 bg-forest/5 rounded-xl text-xs">
                 <span className="text-forest/70">Remaining balance after advance</span>
                 <span className="font-serif font-bold text-forest text-base">
@@ -781,10 +997,7 @@ export const AdminBookingsPage: React.FC = () => {
                 Advance must be greater than ₹0 and cannot exceed the package amount. Payment is confirmed by webhook only — booking confirmation stays a separate team action.
               </p>
 
-              {(() => {
-                const invalid = advanceAmt === '' ? null : advanceError(advanceAmt, crmPkg.totalPrice);
-                return invalid ? <p className="text-[11px] text-red-600 font-semibold">{invalid}</p> : null;
-              })()}
+              {advanceInvalid && <p className="text-[11px] text-red-600 font-semibold">{advanceInvalid}</p>}
 
               <div className="flex gap-2 justify-end pt-2 border-t border-forest/10">
                 <button
@@ -795,7 +1008,7 @@ export const AdminBookingsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleRequestAdvance}
-                  disabled={crmBusy !== '' || advanceAmt === ''}
+                  disabled={crmBusy !== '' || advanceAmt === '' || !!advanceInvalid}
                   className="px-5 py-2 bg-forest text-sand rounded-xl font-bold uppercase tracking-wider text-xs disabled:opacity-40"
                 >
                   {crmBusy === 'advance' ? 'Issuing link...' : 'Generate & Email Link'}

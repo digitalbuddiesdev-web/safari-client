@@ -1,0 +1,18 @@
+# Render Blueprint for the static front end. This repo IS the client, so there
+# is no rootDir: the service root is the repo root. Vercel (vercel.json) is
+# the other deployment target for the same build.
+services:
+  - type: web
+    name: shutter-and-stripes-frontend
+    env: static
+    plan: free
+    region: oregon
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://safari-server-y9md.onrender.com

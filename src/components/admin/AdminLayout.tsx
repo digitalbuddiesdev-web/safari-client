@@ -12,10 +12,11 @@ import {
   ShieldAlert,
   Menu,
   X,
-  Database,
-  ArrowLeft,
+  Search,
   Users,
-  UserCheck
+  UserCheck,
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,6 +30,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const navigate = useNavigate();
   const { user, isAdmin, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (!user || !isAdmin) {
     return (
@@ -54,35 +56,73 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   }
 
-  const navItems = [
-    { label: 'Dashboard', path: '/admin', icon: LayoutDashboard, roles: STAFF },
-    { label: 'Bookings', path: '/admin/bookings', icon: BookOpen, roles: BOOKING },
-    { label: 'Inquiries', path: '/admin/inquiries', icon: MessageSquare, roles: BOOKING },
-    { label: 'Reserves & Sanctuaries', path: '/admin/destinations', icon: MapPin, roles: CONTENT },
-    { label: 'Safari Packages', path: '/admin/safaris', icon: Compass, roles: CONTENT },
-    { label: 'CMS & Brand Story', path: '/admin/cms', icon: FileEdit, roles: CONTENT },
-    { label: 'Team Members', path: '/admin/team', icon: Users, roles: SUPER },
-    { label: 'Travelers', path: '/admin/travelers', icon: UserCheck, roles: SUPER },
-  ].filter(item => item.roles.includes(user.role));
+  // Organized navigation groups for maximum clarity
+  const navSections = [
+    {
+      group: 'Daily Operations',
+      items: [
+        { label: 'Dashboard', path: '/admin', icon: LayoutDashboard, roles: STAFF, desc: 'Overview & alerts' },
+        { label: 'Inquiries & Leads', path: '/admin/inquiries', icon: MessageSquare, roles: BOOKING, desc: 'Guest inquiries & quotes' },
+        { label: 'Bookings & Payments', path: '/admin/bookings', icon: BookOpen, roles: BOOKING, desc: 'Permits, advance & tracking' },
+      ]
+    },
+    {
+      group: 'Parks & Expeditions',
+      items: [
+        { label: 'Reserves & Sanctuaries', path: '/admin/destinations', icon: MapPin, roles: CONTENT, desc: '17 reserves & zones' },
+        { label: 'Safari Packages', path: '/admin/safaris', icon: Compass, roles: CONTENT, desc: 'Pricing tiers & inclusions' },
+        { label: 'Website CMS & Story', path: '/admin/cms', icon: FileEdit, roles: CONTENT, desc: 'Founders story & ethics' },
+      ]
+    },
+    {
+      group: 'Team & Directory',
+      items: [
+        { label: 'Team Members', path: '/admin/team', icon: Users, roles: SUPER, desc: 'Staff roles & access' },
+        { label: 'Traveler Accounts', path: '/admin/travelers', icon: UserCheck, roles: SUPER, desc: 'Registered guests' },
+      ]
+    }
+  ];
 
-  const currentNav = navItems.find(item => item.path === location.pathname) || navItems[0];
+  const allNavItems = navSections.flatMap(s => s.items).filter(item => item.roles.includes(user.role));
+  const currentNav = allNavItems.find(item => item.path === location.pathname) || allNavItems[0];
+
+  const handleQuickSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/admin/bookings?search=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
+  const roleLabels: Record<string, string> = {
+    super_admin: 'Founder / Super Admin',
+    booking_manager: 'Booking & Operations Lead',
+    content_manager: 'Content & Field Naturalist'
+  };
 
   return (
     <div className="min-h-screen bg-sand flex flex-col md:flex-row antialiased text-forest">
       
       {/* Mobile Top Header */}
-      <div className="md:hidden bg-forest text-sand px-4 py-3 flex items-center justify-between shadow-md z-30">
+      <div className="md:hidden bg-forest text-sand px-4 py-3 flex items-center justify-between shadow-md z-30 sticky top-0">
         <div className="flex items-center space-x-2">
           <img src="/assets/logo/nav-logo.svg" alt="Shutter And Stripes" className="h-7 w-auto object-contain rounded bg-sand-warm px-1.5 py-1" />
-          <span className="font-serif font-bold text-sm tracking-wide">ADMIN CONSOLE</span>
+          <span className="font-serif font-bold text-sm tracking-wide">SHUTTER & STRIPES</span>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 text-sand/80 hover:text-sand"
+          aria-label="Toggle menu"
         >
           {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
+
+      {/* Backdrop overlay for mobile drawer */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)} 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden transition-opacity"
+        />
+      )}
 
       {/* Dedicated Admin Sidebar */}
       <aside className={`
@@ -91,8 +131,8 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       `}>
         
         {/* Sidebar Header and Brand */}
-        <div>
-          <div className="p-6 border-b border-sand/10">
+        <div className="overflow-y-auto flex-1">
+          <div className="p-5 border-b border-sand/10">
             <Link to="/admin" className="flex items-center space-x-3 group">
               <img 
                 src="/assets/logo/nav-logo.svg" 
@@ -101,16 +141,16 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               />
               <div>
                 <span className="font-serif font-bold text-base tracking-wider block text-sand leading-tight">
-                  SHUTTER AND STRIPES
+                  SHUTTER & STRIPES
                 </span>
                 <span className="text-[10px] font-mono tracking-widest uppercase text-gold block">
-                  MANAGEMENT DESK
+                  TEAM MANAGEMENT DESK
                 </span>
               </div>
             </Link>
 
             {/* Admin User Badge */}
-            <div className="mt-5 p-3.5 bg-white/5 rounded-2xl border border-sand/10 flex items-center space-x-3">
+            <div className="mt-4 p-3 bg-white/5 rounded-2xl border border-sand/10 flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-gold text-forest flex items-center justify-center font-serif font-bold text-base shrink-0 shadow">
                 {user.name.charAt(0)}
               </div>
@@ -119,60 +159,69 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   {user.name}
                 </div>
                 <div className="text-[10px] text-sand/60 truncate mt-0.5">
-                  {user.email}
+                  {roleLabels[user.role] || user.role}
                 </div>
-                <span className="inline-block mt-1 px-2 py-0.2 rounded-md bg-gold/20 text-gold text-[9px] font-bold uppercase tracking-wider">
-                  {user.role.replace('_', ' ')}
-                </span>
               </div>
             </div>
           </div>
 
-          {/* Navigation Items */}
-          <nav className="p-4 space-y-1">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-sand/40 block px-3 py-2">
-              Menu
-            </span>
-            {navItems.map(item => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+          {/* Grouped Navigation Items */}
+          <nav className="p-3.5 space-y-4">
+            {navSections.map(section => {
+              const visibleItems = section.items.filter(item => item.roles.includes(user.role));
+              if (visibleItems.length === 0) return null;
+
               return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition ${
-                    isActive
-                      ? 'bg-gold text-forest font-bold shadow-md'
-                      : 'text-sand/80 hover:bg-white/10 hover:text-sand'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-forest' : 'text-gold'}`} />
-                  <span className="truncate">{item.label}</span>
-                </Link>
+                <div key={section.group} className="space-y-1">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-gold/80 block px-3 pt-1 pb-1">
+                    {section.group}
+                  </span>
+                  {visibleItems.map(item => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition ${
+                          isActive
+                            ? 'bg-gold text-forest font-bold shadow-md'
+                            : 'text-sand/85 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 truncate">
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-forest' : 'text-gold'}`} />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        {isActive && <ChevronRight className="w-3.5 h-3.5 text-forest shrink-0 ml-1" />}
+                      </Link>
+                    );
+                  })}
+                </div>
               );
             })}
           </nav>
         </div>
 
         {/* Sidebar Footer Shortcuts */}
-        <div className="p-4 border-t border-sand/10 space-y-2">
+        <div className="p-3.5 border-t border-sand/10 space-y-2 bg-black/10 shrink-0">
           <Link
             to={import.meta.env.PROD ? 'https://www.shutterandstripessafaris.com/' : '/'}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs text-sand/80 hover:bg-white/10 hover:text-sand transition"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-sand/80 hover:bg-white/10 hover:text-sand transition"
           >
             <div className="flex items-center space-x-2">
-              <ArrowLeft className="w-3.5 h-3.5 text-gold" />
-              <span>Visit Public Site</span>
+              <Sparkles className="w-3.5 h-3.5 text-gold" />
+              <span>Visit Live Website</span>
             </div>
             <ExternalLink className="w-3 h-3 text-sand/40" />
           </Link>
 
           <button
             onClick={() => { logout(); navigate('/login'); }}
-            className="w-full flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200 transition font-medium"
+            className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200 transition font-medium"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -184,21 +233,33 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Main Admin Content Body */}
       <div className="flex-1 flex flex-col h-screen overflow-y-auto">
         
-        {/* Top Desktop Bar */}
-        <header className="bg-white border-b border-forest/10 px-6 sm:px-8 py-4 sticky top-0 z-20 flex items-center justify-between shadow-sm">
+        {/* Top Desktop Bar with Quick Search */}
+        <header className="bg-white border-b border-forest/10 px-6 sm:px-8 py-3.5 sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
           <div>
             <h1 className="font-serif text-xl sm:text-2xl font-bold text-forest leading-tight">
               {currentNav.label}
             </h1>
-            <p className="text-forest/60 text-xs mt-0.5">
-              Shutter and Stripes Admin Panel
+            <p className="text-forest/60 text-xs">
+              {currentNav.desc || 'Shutter and Stripes Management Console'}
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center space-x-3 text-xs">
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+          <div className="flex items-center space-x-3 text-xs">
+            {/* Quick search input */}
+            <form onSubmit={handleQuickSearch} className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-forest/40 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search booking ref, phone..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-sand/40 border border-forest/15 rounded-xl text-forest placeholder:text-forest/40 focus:outline-none focus:ring-2 focus:ring-gold/50 focus:bg-white transition"
+              />
+            </form>
+
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Online</span>
+              <span>Live Console</span>
             </div>
           </div>
         </header>

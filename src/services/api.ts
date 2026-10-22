@@ -220,7 +220,7 @@ export const crmService = {
     return res.data.inquiries;
   },
   getInquiry: async (id: string) => {
-    const res = await api.get<{ success: boolean; inquiry: CrmInquiry; booking: CrmBooking | null; package: CrmPackage | null; emails: CrmEmailLog[] }>(`/crm/inquiries/${id}`);
+    const res = await api.get<{ success: boolean; inquiry: CrmInquiry; booking: CrmBooking | null; package: CrmPackage | null; emails: CrmEmailLog[]; missingFields: string[] }>(`/crm/inquiries/${id}`);
     return res.data;
   },
   updateInquiry: async (id: string, data: { assignedTo?: string | null; status?: string; note?: string }) => {
@@ -228,15 +228,15 @@ export const crmService = {
     return res.data.inquiry;
   },
   savePackage: async (inquiryId: string, data: Partial<CrmPackage>) => {
-    const res = await api.post(`/crm/inquiries/${inquiryId}/package`, data);
-    return res.data; // { package, booking }
+    const res = await api.post<{ success: boolean; package: CrmPackage; booking: CrmBooking; missingFields: string[] }>(`/crm/inquiries/${inquiryId}/package`, data);
+    return res.data; // { package, booking, missingFields }
   },
   listBookings: async (params?: { status?: string; search?: string }) => {
     const res = await api.get<{ success: boolean; count: number; bookings: CrmBooking[] }>('/crm/bookings', { params });
     return res.data.bookings;
   },
   getBooking: async (id: string) => {
-    const res = await api.get<{ success: boolean; booking: CrmBooking; package: CrmPackage | null; emails: CrmEmailLog[]; outstanding: number; totalPaid: number }>(`/crm/bookings/${id}`);
+    const res = await api.get<{ success: boolean; booking: CrmBooking; package: CrmPackage | null; emails: CrmEmailLog[]; outstanding: number; totalPaid: number; missingFields: string[] }>(`/crm/bookings/${id}`);
     return res.data;
   },
   activateAdvance: async (id: string, advanceAmount: number) => {
