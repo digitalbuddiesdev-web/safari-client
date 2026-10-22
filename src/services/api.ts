@@ -215,6 +215,21 @@ export const crmService = {
     const res = await api.get('/crm/stats');
     return res.data;
   },
+  // A lead typed in by staff (phone, walk-in, WhatsApp) still enters the same pipeline.
+  createInquiry: async (data: {
+    name: string;
+    email: string;
+    phone?: string;
+    destination?: string;
+    travelDate?: string;
+    preferredDates?: string;
+    subject?: string;
+    guests?: number;
+    message: string;
+  }) => {
+    const res = await api.post<{ success: boolean; inquiry: CrmInquiry }>('/crm/inquiries', data);
+    return res.data.inquiry;
+  },
   listInquiries: async (params?: { status?: string; search?: string }) => {
     const res = await api.get<{ success: boolean; count: number; inquiries: CrmInquiry[] }>('/crm/inquiries', { params });
     return res.data.inquiries;

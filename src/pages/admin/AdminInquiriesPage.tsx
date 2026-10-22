@@ -79,6 +79,12 @@ export const AdminInquiriesPage: React.FC = () => {
   const [advanceAmountInput, setAdvanceAmountInput] = useState('');
   const [activatingAdvance, setActivatingAdvance] = useState(false);
 
+  // A lead taken over the phone / at the desk, typed in by staff.
+  const emptyInquiry = { name: '', email: '', phone: '', destination: '', travelDate: '', guests: '2', message: '' };
+  const [showNewInquiry, setShowNewInquiry] = useState(false);
+  const [creatingInquiry, setCreatingInquiry] = useState(false);
+  const [newInquiry, setNewInquiry] = useState({ ...emptyInquiry });
+
   const fetchInquiries = async () => {
     try {
       setLoading(true);
@@ -95,6 +101,22 @@ export const AdminInquiriesPage: React.FC = () => {
   };
 
   useEffect(() => { fetchInquiries(); }, [statusFilter]);
+
+  const submitNewInquiry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setCreatingInquiry(true);
+      const inquiry = await crmService.createInquiry({ ...newInquiry, guests: Number(newInquiry.guests) || 2 });
+      success(inquiry.enquiryId ? `Enquiry ${inquiry.enquiryId} created.` : 'Enquiry created.');
+      setShowNewInquiry(false);
+      setNewInquiry({ ...emptyInquiry });
+      fetchInquiries();
+    } catch (err: any) {
+      error(err.response?.data?.message || 'Failed to create the enquiry.');
+    } finally {
+      setCreatingInquiry(false);
+    }
+  };
 
   // Team list for assignment
   useEffect(() => {
@@ -330,24 +352,34 @@ export const AdminInquiriesPage: React.FC = () => {
               </p>
             </div>
 
-            <form
-              onSubmit={e => { e.preventDefault(); fetchInquiries(); }}
-              className="flex items-center gap-2"
-            >
-              <div className="relative">
-                <Search className="w-4 h-4 text-forest/40 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Enquiry ID, name, email..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-3 py-2 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30 w-64"
-                />
-              </div>
-              <button type="submit" className="px-4 py-2 bg-forest text-sand rounded-xl text-xs font-semibold uppercase tracking-wider">
-                Search
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowNewInquiry(true)}
+                className="px-4 py-2 bg-gold text-forest rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                New Enquiry
               </button>
-            </form>
+              <form
+                onSubmit={e => { e.preventDefault(); fetchInquiries(); }}
+                className="flex items-center gap-2"
+              >
+                <div className="relative">
+                  <Search className="w-4 h-4 text-forest/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Enquiry ID, name, email..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-3 py-2 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30 w-64"
+                  />
+                </div>
+                <button type="submit" className="px-4 py-2 bg-forest text-sand rounded-xl text-xs font-semibold uppercase tracking-wider">
+                  Search
+                </button>
+              </form>
+            </div>
           </div>
 
           {/* 5-Step Pipeline filter pills */}
@@ -1067,6 +1099,56 @@ export const AdminInquiriesPage: React.FC = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* New enquiry: a lead that came in by phone, walk-in or WhatsApp. */}
+        {showNewInquiry && (
+          <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <form
+              onSubmit={submitNewInquiry}
+              className="bg-white rounded-3xl border border-forest/15 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-forest">New Enquiry</h3>
+                  <p className="text-forest/60 text-xs">
+                    Log a phone, walk-in or WhatsApp request. It enters the same pipeline as a website enquiry.
+                  </p>
+                </div>
+                <button type="button" onClick={() => setShowNewInquiry(false)} className="p-1 rounded-full text-forest/40 hover:text-forest">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {field('Customer Name', newInquiry.name, v => setNewInquiry({ ...newInquiry, name: v }), { required: true })}
+                {field('Email', newInquiry.email, v => setNewInquiry({ ...newInquiry, email: v }), { type: 'email', required: true })}
+                {field('Phone', newInquiry.phone, v => setNewInquiry({ ...newInquiry, phone: v }))}
+                {field('Guests', newInquiry.guests, v => setNewInquiry({ ...newInquiry, guests: v }), { type: 'number' })}
+                {field('Destination', newInquiry.destination, v => setNewInquiry({ ...newInquiry, destination: v }))}
+                {field('Travel Date', newInquiry.travelDate, v => setNewInquiry({ ...newInquiry, travelDate: v }), { type: 'date' })}
+              </div>
+
+              {field('Requirements / Notes', newInquiry.message, v => setNewInquiry({ ...newInquiry, message: v }), { area: true, required: true })}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={creatingInquiry}
+                  className="flex-1 px-4 py-2.5 bg-forest text-sand rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-forest/90 transition shadow disabled:opacity-40"
+                >
+                  {creatingInquiry ? 'Creating...' : 'Create Enquiry'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewInquiry(false)}
+                  className="px-4 py-2.5 border border-forest/25 rounded-xl text-xs font-semibold hover:bg-sand transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         )}
 

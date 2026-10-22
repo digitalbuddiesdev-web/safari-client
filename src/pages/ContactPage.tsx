@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
 import { 
   Mail, 
   Phone, 
@@ -12,32 +11,19 @@ import {
   MessageSquare,
   ShieldCheck
 } from 'lucide-react';
-import { stateCode } from '../lib/site';
-import { cmsService, destinationService } from '../services/api';
-import { Destination } from '../types';
+import { cmsService } from '../services/api';
 
 export const ContactPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const initialSubject = searchParams.get('subject') || '';
-
-  const [destinations, setDestinations] = useState<Destination[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    destination: '',
-    travelDate: '',
-    subject: initialSubject,
     message: ''
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [enquiryId, setEnquiryId] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    destinationService.getAll().then(data => setDestinations(data)).catch(console.error);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,9 +155,6 @@ export const ContactPage: React.FC = () => {
                         name: '',
                         email: '',
                         phone: '',
-                        destination: '',
-                        travelDate: '',
-                        subject: '',
                         message: ''
                       });
                     }}
@@ -187,7 +170,7 @@ export const ContactPage: React.FC = () => {
                       Request Bespoke Expedition or Permit Assistance
                     </h2>
                     <p className="text-forest/60 text-xs">
-                      Provide your travel outline below. We do not spam or share your contact details.
+                      Share a few details and our team will take it from there. We do not spam or share your contact details.
                     </p>
                   </div>
 
@@ -226,9 +209,7 @@ export const ContactPage: React.FC = () => {
                         className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
                       />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Phone Number *
@@ -239,49 +220,6 @@ export const ContactPage: React.FC = () => {
                         value={formData.phone}
                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+91 98765 43210"
-                        className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
-                        Target Reserve (Optional)
-                      </label>
-                      <select
-                        value={formData.destination}
-                        onChange={e => setFormData({ ...formData, destination: e.target.value })}
-                        className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
-                      >
-                        <option value="">-- Multiple / Unsure --</option>
-                        {destinations.map(d => (
-                          <option key={d._id} value={d.name}>{d.name} ({stateCode(d.state)})</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
-                        Approximate Travel Date
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.travelDate}
-                        onChange={e => setFormData({ ...formData, travelDate: e.target.value })}
-                        className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
-                        Subject / Focus
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.subject}
-                        onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                        placeholder="e.g. Photography Safari Jeep, Multi-park Safari"
                         className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
                       />
                     </div>
@@ -296,7 +234,7 @@ export const ContactPage: React.FC = () => {
                       rows={5}
                       value={formData.message}
                       onChange={e => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="Please mention number of guests, preferred camera focal lengths or gear, specific zone interests, or special requests..."
+                      placeholder="Tell us about your trip — reserve, dates, number of guests, or any special requests..."
                       className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30 resize-none leading-relaxed"
                     />
                   </div>
