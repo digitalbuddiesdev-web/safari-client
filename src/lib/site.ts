@@ -23,6 +23,13 @@ const STATE_CODES: Record<string, string> = {
   Chandigarh: 'CH', Dadra: 'DN', Daman: 'DH', Lakshadweep: 'LD', Puducherry: 'PY'
 };
 
+// Leaflet popups and tooltips take raw HTML, so any admin-entered text that
+// reaches them has to be escaped by hand.
+export const escapeHtml = (value?: string): string =>
+  String(value ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
+  );
+
 export const stateCode = (state?: string): string =>
   (state && STATE_CODES[state]) || state?.slice(0, 2).toUpperCase() || '—';
 

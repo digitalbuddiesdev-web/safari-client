@@ -122,24 +122,8 @@ export const safariService = {
 
 // Booking Services
 export const bookingService = {
-  create: async (bookingData: any) => {
-    const res = await api.post<{ success: boolean; message: string; booking: Booking }>('/bookings', bookingData);
-    return res.data.booking;
-  },
-  getMyBookings: async () => {
-    const res = await api.get<{ success: boolean; count: number; bookings: Booking[] }>('/bookings/my-bookings');
-    return res.data.bookings;
-  },
-  getByRef: async (ref: string) => {
-    const res = await api.get<{ success: boolean; booking: Booking }>(`/bookings/ref/${ref}`);
-    return res.data.booking;
-  },
   track: async (data: { ref: string; email?: string; phone?: string }) => {
     const res = await api.post<{ success: boolean; booking: Booking }>('/bookings/track', data);
-    return res.data.booking;
-  },
-  cancel: async (id: string) => {
-    const res = await api.put(`/bookings/${id}/cancel`);
     return res.data.booking;
   },
   getAllAdmin: async (params?: { status?: string; search?: string }) => {

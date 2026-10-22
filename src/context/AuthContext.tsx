@@ -14,6 +14,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// The roles the server treats as staff (see server/src/utils/ownership.js).
+const ADMIN_ROLES = ['super_admin', 'booking_manager', 'content_manager'];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // A truncated or hand-edited sns_user would otherwise throw inside the useState
   // initialiser and white-screen the whole app before a single route renders.
@@ -58,7 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = !!user && !!token;
-  const isAdmin = !!user && user.role !== 'customer';
+  // Mirror the server's staff allowlist. "Anything that is not a customer" would
+  // also let a role the server never granted into the admin shell.
+  const isAdmin = !!user && ADMIN_ROLES.includes(user.role);
 
   return (
     <AuthContext.Provider value={{ user, token, isAuthenticated, isAdmin, login, logout, refreshUser }}>

@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Destination } from '../../types';
 import type { FeatureCollection } from 'geojson';
 import { Compass, ArrowRight, Star } from 'lucide-react';
-import { MAP_LABEL, stateCode, isCoreState, isPrimeZone, BOOKINGS_EMAIL, reserveKind, RESERVE_KIND_COLOR, durationText } from '../../lib/site';
+import { MAP_LABEL, stateCode, isCoreState, isPrimeZone, BOOKINGS_EMAIL, reserveKind, RESERVE_KIND_COLOR, durationText, escapeHtml } from '../../lib/site';
 
 interface ReserveMapProps {
   destinations: Destination[];
@@ -155,14 +155,14 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
       }).addTo(layer);
 
       marker.bindTooltip(
-        `<strong>${dest.name}</strong><br/><span style="font-size:11px;opacity:.75">${kind} · ${dest.state}</span>`,
+        `<strong>${escapeHtml(dest.name)}</strong><br/><span style="font-size:11px;opacity:.75">${escapeHtml(kind)} · ${escapeHtml(dest.state)}</span>`,
         { direction: 'top', offset: [0, -6] }
       );
 
       marker.bindPopup(
         `<div class="text-sand text-xs leading-relaxed">
-          <strong class="font-serif text-sm">${dest.name}</strong><br/>
-          ${dest.tagline}<br/>
+          <strong class="font-serif text-sm">${escapeHtml(dest.name)}</strong><br/>
+          ${escapeHtml(dest.tagline)}<br/>
           <span style="opacity:.7">Custom journeys — share your dates for a quote</span>
         </div>`,
         { className: 'custom-map-popup' }
