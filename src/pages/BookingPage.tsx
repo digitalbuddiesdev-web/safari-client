@@ -7,12 +7,7 @@ import {
   Send, 
   CheckCircle2, 
   AlertCircle, 
-  ChevronDown,
-  Camera,
-  Hotel,
-  Car,
-  Plane,
-  Sparkles
+  ChevronDown
 } from 'lucide-react';
 import { SafariCalendar } from '../components/SafariCalendar';
 import { destinationService, cmsService } from '../services/api';
@@ -63,51 +58,11 @@ export const BookingPage: React.FC = () => {
   const [infants, setInfants] = useState(0);
   const [calendarFor, setCalendarFor] = useState<'start' | 'end' | null>(null);
   const [contact, setContact] = useState({ name: '', email: '', phone: '' });
-  
-  // Custom Selectors for Bespoke Journey
-  const [experience, setExperience] = useState('photography');
-  const [stayTier, setStayTier] = useState('luxury_lodge');
-  const [vehiclePref, setVehiclePref] = useState('private_gypsy');
-  const [transferHub, setTransferHub] = useState('nagpur');
-  const [addons, setAddons] = useState<string[]>(['lens_rental']);
   const [specialNotes, setSpecialNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const EXPERIENCES = [
-    { id: 'photography', title: 'Wildlife Photography Safari', desc: 'DSLR/lens gear assistance, beanbags & master photographer tracker', icon: '📸' },
-    { id: 'classic_tiger', title: 'Classic Tiger Safari', desc: 'Maximum core game drives with intensive tracking focus', icon: '🐅' },
-    { id: 'family_leisure', title: 'Family & Leisure Wildlife', desc: 'Relaxed safari pace, premium resort stay & naturalist walks', icon: '👨‍👩‍👧' },
-    { id: 'birding_nature', title: 'Birding & Biodiversity', desc: 'Buffer zone walking trails, night drives & ornithology guide', icon: '🦜' }
-  ];
-
-  const STAY_TIERS = [
-    { id: 'luxury_lodge', title: 'Ultra-Luxury Lodge', subtitle: 'e.g. Bamboo Forest / Taj Baghvan (Private villas & pools)', icon: '💎' },
-    { id: 'boutique_resort', title: 'Premium Boutique Resort', subtitle: 'e.g. Tuli Tiger / Pench Tree House (Cottages & spa)', icon: '🌿' },
-    { id: 'eco_camp', title: 'Heritage Safari Camp', subtitle: 'Authentic wilderness cottages with modern comforts', icon: '🏕️' },
-    { id: 'expert_choice', title: 'Let Expert Recommend', subtitle: 'Hand-picked based on sightings and seasonality', icon: '💡' }
-  ];
-
-  const VEHICLE_PREFS = [
-    { id: 'private_gypsy', title: 'Exclusive Private 4x4 Gypsy', badge: 'Recommended' },
-    { id: 'core_only', title: 'Core Forest Zones Only', badge: 'High Density' },
-    { id: 'core_buffer_night', title: 'Core Drives + Night Buffer Safari', badge: 'Complete' }
-  ];
-
-  const TRANSFER_HUBS = [
-    { id: 'nagpur', label: '✈️ Nagpur Airport / Station (NAG) — Tadoba, Pench, Umred' },
-    { id: 'jabalpur', label: '✈️ Jabalpur Airport / Station (JLR) — Kanha, Bandhavgarh' },
-    { id: 'bhopal', label: '✈️ Bhopal Airport (BHO) — Satpura' },
-    { id: 'self_drive', label: '🚗 Direct Arrival / Self-Drive at Resort' }
-  ];
-
-  const ADDON_OPTIONS = [
-    { id: 'lens_rental', label: 'Telephoto Lens Rental (Sony 200-600mm / Canon 100-400mm / Nikon 180-600mm)' },
-    { id: 'gimbal_mount', label: 'Safari Vehicle Photography Gimbal / Swivel Camera Mount' },
-    { id: 'photo_mentor', label: 'Professional Wildlife Photographer Mentor on Board' }
-  ];
 
   useEffect(() => {
     destinationService.getAll({ limit: 100 }).then(setDestinations).catch(() => {});
@@ -137,12 +92,6 @@ export const BookingPage: React.FC = () => {
     setCalendarFor(null);
   };
 
-  const expObj = EXPERIENCES.find(e => e.id === experience);
-  const stayObj = STAY_TIERS.find(s => s.id === stayTier);
-  const vehObj = VEHICLE_PREFS.find(v => v.id === vehiclePref);
-  const hubObj = TRANSFER_HUBS.find(h => h.id === transferHub);
-  const activeAddonLabels = addons.map(a => ADDON_OPTIONS.find(o => o.id === a)?.label).filter(Boolean);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate) {
@@ -160,16 +109,9 @@ export const BookingPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
-    const structuredLines = [
-      `[Style]: ${expObj?.title || experience}`,
-      `[Stay]: ${stayObj?.title || stayTier}`,
-      `[Vehicle & Zones]: ${vehObj?.title || vehiclePref}`,
-      `[Transfer Hub]: ${hubObj?.label || transferHub}`,
-      activeAddonLabels.length ? `[Add-ons]: ${activeAddonLabels.join(', ')}` : '',
-      specialNotes.trim() ? `[Special Notes]: ${specialNotes.trim()}` : ''
-    ].filter(Boolean).join('\n');
-
-    const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Guests: ${guestsLabel}\n\n${structuredLines}`;
+    const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Guests: ${guestsLabel}${
+      specialNotes.trim() ? `\n\n[Special Notes]: ${specialNotes.trim()}` : ''
+    }`;
 
     try {
       await cmsService.submitInquiry({
@@ -305,137 +247,6 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 1. Safari Experience Focus */}
-              <div>
-                <span className={fieldLabel}>
-                  <Camera className="w-3.5 h-3.5 text-gold" /> Safari Experience Style
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {EXPERIENCES.map((exp) => (
-                    <button
-                      key={exp.id}
-                      type="button"
-                      onClick={() => setExperience(exp.id)}
-                      className={`p-3.5 rounded-xl border text-left transition ${
-                        experience === exp.id
-                          ? 'bg-forest/5 border-forest ring-1 ring-forest shadow-xs'
-                          : 'bg-sand/30 border-forest/15 hover:border-forest/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{exp.icon}</span>
-                        <span className="font-bold text-xs text-forest">{exp.title}</span>
-                      </div>
-                      <p className="text-[11px] text-forest/70 mt-1 leading-snug">{exp.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2. Accommodation Tier */}
-              <div>
-                <span className={fieldLabel}>
-                  <Hotel className="w-3.5 h-3.5 text-gold" /> Preferred Accommodation Tier
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {STAY_TIERS.map((st) => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => setStayTier(st.id)}
-                      className={`p-3 rounded-xl border text-left transition ${
-                        stayTier === st.id
-                          ? 'bg-forest/5 border-forest ring-1 ring-forest shadow-xs'
-                          : 'bg-sand/30 border-forest/15 hover:border-forest/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{st.icon}</span>
-                        <span className="font-bold text-xs text-forest">{st.title}</span>
-                      </div>
-                      <span className="text-[10px] text-forest/60 block mt-0.5">{st.subtitle}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. Safari Vehicle & Zone Plan */}
-              <div>
-                <span className={fieldLabel}>
-                  <Car className="w-3.5 h-3.5 text-gold" /> Safari Vehicle &amp; Zone Preference
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {VEHICLE_PREFS.map((vp) => (
-                    <button
-                      key={vp.id}
-                      type="button"
-                      onClick={() => setVehiclePref(vp.id)}
-                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
-                        vehiclePref === vp.id
-                          ? 'bg-forest text-sand border-forest shadow-xs'
-                          : 'bg-sand/30 border-forest/15 text-forest hover:border-forest/40'
-                      }`}
-                    >
-                      <span className="text-[9px] uppercase tracking-wider font-bold opacity-80">{vp.badge}</span>
-                      <span className="font-bold text-xs mt-1">{vp.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 4. Airport / Station Transfer Hub */}
-              <div>
-                <span className={fieldLabel}>
-                  <Plane className="w-3.5 h-3.5 text-gold" /> Arrival &amp; Transfer Hub
-                </span>
-                <div className="relative">
-                  <select
-                    value={transferHub}
-                    onChange={(e) => setTransferHub(e.target.value)}
-                    className="w-full appearance-none bg-sand border border-forest/20 rounded-xl px-4 py-3 text-xs font-semibold text-forest focus:outline-none focus:border-gold"
-                  >
-                    {TRANSFER_HUBS.map((th) => (
-                      <option key={th.id} value={th.id}>
-                        {th.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-forest/50 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* 5. Special Gear & Guide Add-ons */}
-              <div>
-                <span className={fieldLabel}>
-                  <Sparkles className="w-3.5 h-3.5 text-gold" /> Photography &amp; Naturalist Add-ons (Optional)
-                </span>
-                <div className="space-y-2">
-                  {ADDON_OPTIONS.map((ao) => {
-                    const checked = addons.includes(ao.id);
-                    return (
-                      <label
-                        key={ao.id}
-                        className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition ${
-                          checked ? 'bg-gold/15 border-gold/50 text-forest' : 'bg-sand/20 border-forest/15 text-forest/70 hover:border-forest/30'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            setAddons((prev) =>
-                              prev.includes(ao.id) ? prev.filter((id) => id !== ao.id) : [...prev, ao.id]
-                            );
-                          }}
-                          className="w-4 h-4 rounded text-forest focus:ring-forest/30 border-forest/30"
-                        />
-                        <span className="text-xs font-medium">{ao.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Special Notes */}
               <div>
                 <span className={fieldLabel}>Special Requirements / Safari Notes (Optional)</span>
@@ -505,24 +316,6 @@ export const BookingPage: React.FC = () => {
                     <span className="text-sand/60">Travellers</span>
                     <span className="font-semibold text-right">{guestsLabel}</span>
                   </div>
-                  <div className="flex justify-between gap-4 pt-1 border-t border-sand/15">
-                    <span className="text-sand/60">Style</span>
-                    <span className="font-semibold text-right text-gold">{expObj?.title}</span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-sand/60">Stay</span>
-                    <span className="font-semibold text-right">{stayObj?.title}</span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-sand/60">Vehicle</span>
-                    <span className="font-semibold text-right">{vehObj?.title}</span>
-                  </div>
-                  {activeAddonLabels.length > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-sand/60">Add-ons</span>
-                      <span className="font-semibold text-right text-emerald-300">{activeAddonLabels.length} Selected</span>
-                    </div>
-                  )}
                 </div>
                 <div className="border-t border-sand/20 pt-4">
                   <p className="text-[11px] text-sand/70 leading-relaxed">
