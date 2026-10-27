@@ -58,7 +58,7 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-2 lg:col-span-4 space-y-5">
             <img src="/assets/logo/nav-logo.svg" alt="Shutter and Stripes" className="h-12 w-auto object-contain" />
             <p className="text-sand/75 text-[13px] leading-relaxed max-w-sm">
-              Ethical, low-impact wildlife expeditions across the tiger heartlands of Madhya Pradesh and Maharashtra &mdash; led by local naturalists and photographers.
+              Immersive, conservation-first wildlife expeditions across the legendary tiger heartlands of Central India &mdash; guided by native naturalists and wildlife photographers.
             </p>
             <div className="flex items-center gap-3 text-sand/80">
               <a href="https://www.instagram.com/shutterandstripes" target="_blank" rel="noreferrer" className="hover:text-gold transition-colors p-2 bg-sand/5 rounded-full hover:bg-sand/10" aria-label="Instagram">

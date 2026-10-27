@@ -201,6 +201,7 @@ export interface CrmInquiry {
   assignedTo?: { _id: string; name: string; email?: string } | string | null;
   booking?: string | null;
   guests?: number;
+  safaris?: number;
   createdAt: string;
   notes?: { _id?: string; by?: string; note: string; createdAt?: string }[];
 }

@@ -583,7 +583,7 @@ export const AdminInquiriesPage: React.FC = () => {
                 </div>
 
                 {/* Requirements Summary */}
-                <div className="p-3 bg-white/70 rounded-xl border border-forest/10 grid sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white/70 rounded-xl border border-forest/10 grid sm:grid-cols-4 gap-3 text-xs">
                   <div>
                     <span className="text-[10px] text-forest/50 uppercase font-bold block">Target Reserve</span>
                     <strong className="text-forest text-xs">{detail.inquiry.destination || 'Open / Not Specified'}</strong>
@@ -591,6 +591,10 @@ export const AdminInquiriesPage: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-forest/50 uppercase font-bold block">Preferred Dates</span>
                     <strong className="text-forest text-xs">{detail.inquiry.travelDate || 'Flexible'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-forest/50 uppercase font-bold block">No. of Safaris</span>
+                    <strong className="text-forest text-xs">{detail.inquiry.safaris ? `${detail.inquiry.safaris} safaris` : 'Flexible'}</strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-forest/50 uppercase font-bold block">Travelers / Guests</span>
@@ -850,7 +854,7 @@ export const AdminInquiriesPage: React.FC = () => {
                     {field('Day-by-Day Itinerary', pkg.itinerary, v => setPkg({ ...pkg, itinerary: v }), { area: true, rows: 3, required: true })}
                     {field('Inclusions (One per line)', pkg.inclusions, v => setPkg({ ...pkg, inclusions: v }), { area: true, rows: 2, required: true })}
                     {field('Exclusions (One per line)', pkg.exclusions, v => setPkg({ ...pkg, exclusions: v }), { area: true, rows: 2, required: true })}
-                    {field('Statutory Terms & Conditions', pkg.terms, v => setPkg({ ...pkg, terms: v }), { area: true, rows: 2, required: true })}
+                    {field('Terms & Conditions', pkg.terms, v => setPkg({ ...pkg, terms: v }), { area: true, rows: 2, required: true })}
 
                     <div className="flex gap-2 pt-2">
                       <button
@@ -1124,7 +1128,7 @@ export const AdminInquiriesPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {field('Customer Name', newInquiry.name, v => setNewInquiry({ ...newInquiry, name: v }), { required: true })}
                 {field('Email', newInquiry.email, v => setNewInquiry({ ...newInquiry, email: v }), { type: 'email', required: true })}
-                {field('Phone', newInquiry.phone, v => setNewInquiry({ ...newInquiry, phone: v }))}
+                {field('Phone / WhatsApp', newInquiry.phone, v => setNewInquiry({ ...newInquiry, phone: v }), { required: true })}
                 {field('Guests', newInquiry.guests, v => setNewInquiry({ ...newInquiry, guests: v }), { type: 'number' })}
                 {field('Destination', newInquiry.destination, v => setNewInquiry({ ...newInquiry, destination: v }))}
                 {field('Travel Date', newInquiry.travelDate, v => setNewInquiry({ ...newInquiry, travelDate: v }), { type: 'date' })}

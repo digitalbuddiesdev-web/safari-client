@@ -7,7 +7,8 @@ import {
   Send, 
   CheckCircle2, 
   AlertCircle, 
-  ChevronDown
+  ChevronDown,
+  Compass
 } from 'lucide-react';
 import { SafariCalendar } from '../components/SafariCalendar';
 import { destinationService, cmsService } from '../services/api';
@@ -53,6 +54,7 @@ export const BookingPage: React.FC = () => {
   const [destination, setDestination] = useState(params.get('destination') || '');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [safaris, setSafaris] = useState(3);
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
@@ -106,10 +108,14 @@ export const BookingPage: React.FC = () => {
       setError('Please enter a valid email address.');
       return;
     }
+    if (!contact.phone.trim() || contact.phone.replace(/\D/g, '').length < 10) {
+      setError('Please enter a valid Phone / WhatsApp number (minimum 10 digits).');
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
-    const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Guests: ${guestsLabel}${
+    const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Safaris: ${safaris} · Guests: ${guestsLabel}${
       specialNotes.trim() ? `\n\n[Special Notes]: ${specialNotes.trim()}` : ''
     }`;
 
@@ -121,6 +127,7 @@ export const BookingPage: React.FC = () => {
         destination: destinationName,
         preferredDates: dateRange,
         guests: guestCount,
+        safaris,
         message: formattedMessage,
       });
       setSent(true);
@@ -236,6 +243,71 @@ export const BookingPage: React.FC = () => {
                 )}
               </div>
 
+              {/* No. of Safaris (Interactive Slider Selector) */}
+              <div className="bg-sand/40 border border-forest/15 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className={fieldLabel}>
+                    <Compass className="w-3.5 h-3.5 text-gold" /> No. of Safaris
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-gold text-xs font-bold tracking-wide shadow-xs">
+                    {safaris} {safaris === 1 ? 'Safari Drive' : 'Safari Drives'}
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <input
+                    type="range"
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={safaris}
+                    onChange={(e) => setSafaris(Number(e.target.value))}
+                    className="w-full h-2.5 rounded-lg appearance-none cursor-pointer accent-forest focus:outline-none"
+                    style={{
+                      background: `linear-gradient(to right, #2E3A23 0%, #2E3A23 ${((safaris - 1) / 4) * 100}%, #E2DED0 ${((safaris - 1) / 4) * 100}%, #E2DED0 100%)`
+                    }}
+                    aria-label="No. of Safaris"
+                  />
+
+                  {/* Interactive Step Buttons */}
+                  <div className="grid grid-cols-5 gap-2 pt-1">
+                    {[1, 2, 3, 4, 5].map((num) => {
+                      const isSelected = safaris === num;
+                      return (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setSafaris(num)}
+                          className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border ${
+                            isSelected
+                              ? 'bg-forest text-sand border-forest shadow-md font-bold scale-[1.03]'
+                              : 'bg-white/80 hover:bg-white text-forest/70 border-forest/10 hover:border-forest/30'
+                          }`}
+                        >
+                          <span className={`text-sm ${isSelected ? 'text-gold font-extrabold' : 'font-semibold'}`}>
+                            {num}
+                          </span>
+                          <span className={`text-[10px] uppercase tracking-wider ${isSelected ? 'text-sand/80' : 'text-forest/50'}`}>
+                            {num === 1 ? 'Safari' : 'Safaris'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-forest/70 pt-2 border-t border-forest/10 flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
+                  <span>
+                    {safaris === 1 && '1 safari drive — ideal for a quick reserve preview or short transit itinerary.'}
+                    {safaris === 2 && '2 safari drives — classic 1 night stay with 1 morning & 1 afternoon drive.'}
+                    {safaris === 3 && '3 safari drives — recommended for optimal tiger & predator tracking probabilities.'}
+                    {safaris === 4 && '4 safari drives — deep multi-zone core exploration across morning & afternoon shifts.'}
+                    {safaris === 5 && '5 safari drives — immersive master safari with maximum track-and-photography coverage.'}
+                  </span>
+                </p>
+              </div>
+
               <div className="block">
                 <span className={fieldLabel}>
                   <Users className="w-3.5 h-3.5 text-gold" /> Travellers
@@ -271,6 +343,7 @@ export const BookingPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="email"
+                    required
                     value={contact.email}
                     onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
                     placeholder="Email address *"
@@ -278,9 +351,10 @@ export const BookingPage: React.FC = () => {
                   />
                   <input
                     type="tel"
+                    required
                     value={contact.phone}
                     onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
-                    placeholder="Phone number (for WhatsApp updates)"
+                    placeholder="Phone / WhatsApp Number *"
                     className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-3.5 text-sm text-forest focus:outline-none focus:border-gold"
                   />
                 </div>
@@ -310,6 +384,12 @@ export const BookingPage: React.FC = () => {
                     <span className="text-sand/60">Duration</span>
                     <span className="font-semibold text-right">
                       {nights > 0 ? `${nights} night${nights === 1 ? '' : 's'} / ${nights + 1} days` : 'Flexible'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-sand/60">No. of Safaris</span>
+                    <span className="font-semibold text-right text-gold">
+                      {safaris} {safaris === 1 ? 'Safari Drive' : 'Safari Drives'}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">

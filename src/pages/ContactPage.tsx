@@ -27,6 +27,10 @@ export const ContactPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.phone.trim() || formData.phone.replace(/\D/g, '').length < 10) {
+      setError('Please enter a valid Phone / WhatsApp number (minimum 10 digits).');
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -212,7 +216,7 @@ export const ContactPage: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
-                        Phone Number *
+                        Phone / WhatsApp Number *
                       </label>
                       <input
                         type="tel"

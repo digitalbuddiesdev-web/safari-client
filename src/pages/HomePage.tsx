@@ -140,7 +140,7 @@ export const HomePage: React.FC = () => {
     const { name, email, phone } = quoteContact;
     if (name.trim().length < 3) return setQuoteError("Enter your full name.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setQuoteError('Enter a valid email address.');
-    if (phone.replace(/\D/g, '').length < 10) return setQuoteError('Enter a valid phone number.');
+    if (phone.replace(/\D/g, '').length < 10) return setQuoteError('Enter a valid Phone / WhatsApp number (minimum 10 digits).');
     setQuoteSubmitting(true);
     setQuoteError(null);
     try {
@@ -696,7 +696,7 @@ export const HomePage: React.FC = () => {
                       required
                       value={quoteContact.phone}
                       onChange={(e) => setQuoteContact({ ...quoteContact, phone: e.target.value })}
-                      placeholder="Phone number"
+                      placeholder="Phone / WhatsApp number *"
                       className="w-full px-4 py-3 bg-sand-warm border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
                     />
                   </div>

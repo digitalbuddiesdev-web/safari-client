@@ -24,6 +24,10 @@ export const UpcomingTourPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.phone.trim() || form.phone.replace(/\D/g, '').length < 10) {
+      setError('Please enter a valid Phone / WhatsApp number (minimum 10 digits).');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -219,10 +223,11 @@ export const UpcomingTourPage: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
-                        Phone Number
+                        Phone / WhatsApp Number *
                       </label>
                       <input
                         type="tel"
+                        required
                         value={form.phone}
                         onChange={e => setForm({ ...form, phone: e.target.value })}
                         placeholder="+91 98765 43210"
