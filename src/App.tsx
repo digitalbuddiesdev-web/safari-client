@@ -20,6 +20,7 @@ import GalleryPage from './pages/GalleryPage';
 import JournalPage from './pages/JournalPage';
 import JournalDetailPage from './pages/JournalDetailPage';
 import ResponsibleTourismPage from './pages/ResponsibleTourismPage';
+import ClientStoriesPage from './pages/ClientStoriesPage';
 import FAQPage from './pages/FAQPage';
 import ContactPage from './pages/ContactPage';
 import UpcomingTourPage from './pages/UpcomingTourPage';
@@ -35,6 +36,7 @@ import AdminDestinationsPage from './pages/admin/AdminDestinationsPage';
 import AdminSafarisPage from './pages/admin/AdminSafarisPage';
 import AdminInquiriesPage from './pages/admin/AdminInquiriesPage';
 import AdminOurStoryCMSPage from './pages/admin/AdminOurStoryCMSPage';
+import AdminClientStoriesPage from './pages/admin/AdminClientStoriesPage';
 import AdminTeamPage from './pages/admin/AdminTeamPage';
 import AdminTravelersPage from './pages/admin/AdminTravelersPage';
 
@@ -90,6 +92,7 @@ export const App: React.FC = () => {
           <Route path="/journal" element={<PublicRoute><JournalPage /></PublicRoute>} />
           <Route path="/journal/:slug" element={<PublicRoute><JournalDetailPage /></PublicRoute>} />
           <Route path="/responsible-tourism" element={<PublicRoute><ResponsibleTourismPage /></PublicRoute>} />
+          <Route path="/client-stories" element={<PublicRoute><ClientStoriesPage /></PublicRoute>} />
           <Route path="/faqs" element={<PublicRoute><FAQPage /></PublicRoute>} />
           <Route path="/contact" element={<PublicRoute><ContactPage /></PublicRoute>} />
           <Route path="/upcoming-tours/:slug" element={<PublicRoute><UpcomingTourPage /></PublicRoute>} />
@@ -106,6 +109,7 @@ export const App: React.FC = () => {
           <Route path="/admin/destinations" element={<AdminDestinationsPage />} />
           <Route path="/admin/safaris" element={<AdminSafarisPage />} />
           <Route path="/admin/inquiries" element={<AdminInquiriesPage />} />
+          <Route path="/admin/stories" element={<AdminClientStoriesPage />} />
           <Route path="/admin/cms" element={<AdminOurStoryCMSPage />} />
           <Route path="/admin/team" element={<AdminTeamPage />} />
           <Route path="/admin/travelers" element={<AdminTravelersPage />} />

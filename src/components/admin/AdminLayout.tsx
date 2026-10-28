@@ -71,6 +71,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       items: [
         { label: 'Reserves & Sanctuaries', path: '/admin/destinations', icon: MapPin, roles: CONTENT, desc: '17 reserves & zones' },
         { label: 'Safari Packages', path: '/admin/safaris', icon: Compass, roles: CONTENT, desc: 'Pricing tiers & inclusions' },
+        { label: 'Client Stories & Reels', path: '/admin/stories', icon: Sparkles, roles: CONTENT, desc: 'Reels, videos & reviews' },
         { label: 'Website CMS & Story', path: '/admin/cms', icon: FileEdit, roles: CONTENT, desc: 'Founders story & ethics' },
       ]
     },

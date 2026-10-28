@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { 
   ArrowRight, MapPin, BookOpen, 
   Users, Award, HeartHandshake, Eye, Sparkles, Calendar,
-  X, Send, CheckCircle2, AlertCircle
+  X, Send, CheckCircle2, AlertCircle,
+  Play, Star, ExternalLink, Film
 } from 'lucide-react';
 import { Destination, GalleryItem } from '../types';
 import { destinationService, cmsService } from '../services/api';
@@ -14,6 +15,12 @@ import { UPCOMING_TOURS } from '../lib/upcomingTours';
 import InstagramIcon from '../components/InstagramIcon';
 import { Carousel } from '../components/Carousel';
 import { GalleryLightbox } from '../components/GalleryLightbox';
+import { ClientStoriesSection } from '../components/home/ClientStoriesSection';
+import { 
+  ClientStoriesData, 
+  DEFAULT_CLIENT_STORIES_DATA, 
+  normalizeClientStoriesData 
+} from '../lib/clientStories';
 
 // On mobile the card sections loop continuously; at sm the track dissolves
 // (display:contents) so the same cards flow into the grid laid out by the
@@ -34,7 +41,7 @@ export const HomePage: React.FC = () => {
   const [activeGallery, setActiveGallery] = useState<GalleryItem | null>(null);
   const [loading, setLoading] = useState(true);
   // Client stories are CMS-managed (key `client_stories`); section hides itself while empty.
-  const [clientStories, setClientStories] = useState<{ eyebrow?: string; heading?: string; stories: { name: string; location?: string; quote: string; imageUrl?: string }[] }>({ stories: [] });
+  const [clientStories, setClientStories] = useState<ClientStoriesData>(DEFAULT_CLIENT_STORIES_DATA);
 
   const [splashDone, setSplashDone] = useState(
     () => sessionStorage.getItem(SPLASH_SEEN_KEY) === '1'
@@ -102,7 +109,7 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     cmsService.getContent('client_stories')
-      .then((data) => setClientStories({ stories: [], ...(data || {}) }))
+      .then((data) => setClientStories(data ? normalizeClientStoriesData(data) : DEFAULT_CLIENT_STORIES_DATA))
       .catch(() => {});
   }, []);
 
@@ -534,37 +541,9 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 07b. CLIENT STORIES (CMS-driven, hidden until stories exist) */}
-      {clientStories.stories.length > 0 && (
-        <section className="py-20 bg-sand-warm border-y border-forest/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-              <span className="text-[11px] tracking-widest-safari uppercase text-earth font-bold block">
-                {clientStories.eyebrow || 'Client Stories'}
-              </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-forest">
-                {clientStories.heading || 'In Their Own Words'}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {clientStories.stories.map((story, i) => (
-                <figure key={i} className="bg-sand rounded-2xl border border-forest/15 overflow-hidden shadow-sm flex flex-col">
-                  {story.imageUrl && (
-                    <img src={story.imageUrl} alt={story.name} className="w-full h-52 object-cover" />
-                  )}
-                  <figcaption className="p-6 space-y-3">
-                    <blockquote className="text-sm text-forest/80 leading-relaxed italic font-serif">"{story.quote}"</blockquote>
-                    <div>
-                      <span className="block font-serif font-bold text-forest text-sm">{story.name}</span>
-                      {story.location && <span className="text-[11px] uppercase tracking-wider text-forest/50">{story.location}</span>}
-                    </div>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* 07b. CLIENT STORIES & INSTAGRAM REELS (CMS-driven, backed by curated defaults) */}
+      <ClientStoriesSection data={clientStories} />
+
 
       <GalleryLightbox
         items={gallery}

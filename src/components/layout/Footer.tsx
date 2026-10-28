@@ -85,6 +85,7 @@ export const Footer: React.FC = () => {
           {/* Company */}
           <FooterColumn title="Company" className="lg:col-span-2">
             <li><Link to="/our-story" className={linkClass}>Our Story</Link></li>
+            <li><Link to="/client-stories" className={linkClass}>Client Stories</Link></li>
             <li><Link to="/about" className={linkClass}>About Us</Link></li>
             <li><Link to="/how-it-works" className={linkClass}>How Booking Works</Link></li>
             <li><Link to="/responsible-tourism" className={linkClass}>Ethical Tourism</Link></li>

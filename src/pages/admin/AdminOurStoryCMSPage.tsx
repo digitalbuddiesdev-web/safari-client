@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   FileEdit, 
   Save, 
@@ -231,6 +232,19 @@ export const AdminOurStoryCMSPage: React.FC = () => {
 
               {selectedKey === 'client_stories' && (
                 <>
+                  <div className="p-4 bg-gold/10 border border-gold/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-serif font-bold text-forest text-sm">Dedicated Client Stories & Reels Manager</h4>
+                      <p className="text-xs text-forest/70">Manage video reels, Instagram redirection links, and spotlight cards with rich previews.</p>
+                    </div>
+                    <Link
+                      to="/admin/stories"
+                      className="px-4 py-2 bg-forest text-sand rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-forest/90 transition shadow shrink-0 self-start sm:self-auto"
+                    >
+                      Open Reels & Stories Studio &rarr;
+                    </Link>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                       Section Label
@@ -300,6 +314,13 @@ export const AdminOurStoryCMSPage: React.FC = () => {
                           placeholder="Image URL (optional)"
                           value={story.imageUrl || ''}
                           onChange={e => updateStory(i, { imageUrl: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-white border border-forest/15 rounded-xl text-xs text-forest focus:outline-none"
+                        />
+                        <input
+                          type="url"
+                          placeholder="Instagram Reel URL (e.g. https://www.instagram.com/reel/...)"
+                          value={story.instagramUrl || ''}
+                          onChange={e => updateStory(i, { instagramUrl: e.target.value })}
                           className="w-full px-4 py-2.5 bg-white border border-forest/15 rounded-xl text-xs text-forest focus:outline-none"
                         />
                         <textarea
