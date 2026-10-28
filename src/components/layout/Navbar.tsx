@@ -18,7 +18,7 @@ const PRIMARY_LINKS: NavLinkItem[] = [
   { name: 'Our Story', path: '/our-story' },
   { name: 'Safari Map', path: '/map' },
   { name: 'Journal', path: '/journal' },
-  ( namee: "Client Stories", path: "/client-stories")
+  { name: "Client Stories", path: "/client-stories" },  
   { name: 'Gallery', path: '/gallery' },
 ];
 
