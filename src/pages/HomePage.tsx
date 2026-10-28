@@ -238,9 +238,9 @@ export const HomePage: React.FC = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10 sm:py-24 text-sand w-full">
           <div className="max-w-2xl space-y-6">
             <div className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3.5 py-1.5 rounded-full bg-black/45 backdrop-blur-md border border-gold/40 shadow-lg">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gold">Who We Are</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gold">What We Do</span>
               <span aria-hidden className="w-px h-3.5 bg-sand/40" />
-              <span className="text-[11px] font-semibold text-sand">Your End-to-End Safari Tour Partner.</span>
+              <span className="text-[11px] font-semibold text-sand">Complete Safari Experiences, Crafted for You.</span>
             </div>
             <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
               GUIDED BY LOCALS. <br />
