@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { Destination, GalleryItem } from '../types';
 import { destinationService, cmsService } from '../services/api';
-import { SplashScreen, SPLASH_SEEN_KEY } from '../components/SplashScreen';
 import { SafariCalendar } from '../components/SafariCalendar';
 import { stateCode, YEARS_OF_EXPERIENCE } from '../lib/site';
 import { UPCOMING_TOURS } from '../lib/upcomingTours';
@@ -42,10 +41,6 @@ export const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   // Client stories are CMS-managed (key `client_stories`); section hides itself while empty.
   const [clientStories, setClientStories] = useState<ClientStoriesData>(DEFAULT_CLIENT_STORIES_DATA);
-
-  const [splashDone, setSplashDone] = useState(
-    () => sessionStorage.getItem(SPLASH_SEEN_KEY) === '1'
-  );
 
   // Hero Slider State
   const HERO_SLIDES_DESKTOP = [
@@ -92,6 +87,14 @@ export const HomePage: React.FC = () => {
     );
     return () => window.clearInterval(id);
   }, [heroSlides.length]);
+
+  // Prefetch subsequent hero slides for instant transition caching
+  useEffect(() => {
+    heroSlides.slice(1).forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [heroSlides]);
 
   useEffect(() => {
     Promise.all([
@@ -183,15 +186,6 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="bg-sand text-forest min-h-screen">
-      {!splashDone && (
-        <SplashScreen
-          getVideo={() => null}
-          onDone={() => {
-            sessionStorage.setItem(SPLASH_SEEN_KEY, '1');
-            setSplashDone(true);
-          }}
-        />
-      )}
       
       {/* 01. HERO IMAGE SLIDER */}
       <section className="relative flex items-end sm:items-center justify-center overflow-hidden w-full h-[100vh] h-[100dvh] max-h-[100vh] max-h-[100dvh] sm:h-auto sm:max-h-none sm:min-h-[520px] sm:aspect-video">
@@ -201,8 +195,11 @@ export const HomePage: React.FC = () => {
             <img
               key={src}
               src={src}
-              alt=""
+              alt="Central India Tiger Reserve Safari"
               aria-hidden={i !== (heroIndex % heroSlides.length)}
+              fetchPriority={i === 0 ? "high" : "low"}
+              loading={i === 0 ? "eager" : "lazy"}
+              decoding={i === 0 ? "sync" : "async"}
               className={`absolute inset-0 w-full h-full object-cover brightness-[1.02] contrast-[1.03] transition-opacity duration-[1200ms] ease-in-out ${
                 i === (heroIndex % heroSlides.length) ? 'opacity-100' : 'opacity-0'
               }`}

@@ -55,6 +55,45 @@ export const BookingPage: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [safaris, setSafaris] = useState(3);
+  const [safarisInput, setSafarisInput] = useState('3');
+
+  const handleSafarisChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setSafarisInput(raw);
+    if (raw === '') return;
+    const val = parseInt(raw, 10);
+    if (!isNaN(val)) {
+      if (val > 15) {
+        setSafaris(15);
+        setSafarisInput('15');
+      } else if (val < 1) {
+        setSafaris(1);
+      } else {
+        setSafaris(val);
+      }
+    }
+  };
+
+  const handleSafarisBlur = () => {
+    if (safarisInput === '' || isNaN(Number(safarisInput)) || Number(safarisInput) < 1) {
+      setSafaris(1);
+      setSafarisInput('1');
+    } else if (Number(safarisInput) > 15) {
+      setSafaris(15);
+      setSafarisInput('15');
+    } else {
+      const val = Math.round(Number(safarisInput));
+      setSafaris(val);
+      setSafarisInput(String(val));
+    }
+  };
+
+  const stepSafaris = (delta: number) => {
+    const current = Number(safarisInput) || safaris || 1;
+    const next = Math.max(1, Math.min(15, current + delta));
+    setSafaris(next);
+    setSafarisInput(String(next));
+  };
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
@@ -115,7 +154,8 @@ export const BookingPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
-    const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Safaris: ${safaris} · Guests: ${guestsLabel}${
+    const finalSafaris = Math.max(1, Math.min(15, Number(safarisInput) || safaris || 1));
+    const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Safaris: ${finalSafaris} · Guests: ${guestsLabel}${
       specialNotes.trim() ? `\n\n[Special Notes]: ${specialNotes.trim()}` : ''
     }`;
 
@@ -127,7 +167,7 @@ export const BookingPage: React.FC = () => {
         destination: destinationName,
         preferredDates: dateRange,
         guests: guestCount,
-        safaris,
+        safaris: finalSafaris,
         message: formattedMessage,
       });
       setSent(true);
@@ -243,69 +283,55 @@ export const BookingPage: React.FC = () => {
                 )}
               </div>
 
-              {/* No. of Safaris (Interactive Slider Selector) */}
-              <div className="bg-sand/40 border border-forest/15 rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className={fieldLabel}>
+              {/* No. of Safaris (Open Field) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="safaris-input" className={fieldLabel.replace(' mb-2', '')}>
                     <Compass className="w-3.5 h-3.5 text-gold" /> No. of Safaris
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-gold text-xs font-bold tracking-wide shadow-xs">
+                  </label>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-forest text-gold text-xs font-semibold">
                     {safaris} {safaris === 1 ? 'Safari Drive' : 'Safari Drives'}
                   </span>
                 </div>
-
-                <div className="space-y-3 pt-1">
+                <div className="relative flex items-center">
                   <input
-                    type="range"
+                    id="safaris-input"
+                    type="number"
                     min={1}
-                    max={5}
-                    step={1}
-                    value={safaris}
-                    onChange={(e) => setSafaris(Number(e.target.value))}
-                    className="w-full h-2.5 rounded-lg appearance-none cursor-pointer accent-forest focus:outline-none"
-                    style={{
-                      background: `linear-gradient(to right, #2E3A23 0%, #2E3A23 ${((safaris - 1) / 4) * 100}%, #E2DED0 ${((safaris - 1) / 4) * 100}%, #E2DED0 100%)`
-                    }}
-                    aria-label="No. of Safaris"
+                    max={15}
+                    value={safarisInput}
+                    onChange={handleSafarisChange}
+                    onBlur={handleSafarisBlur}
+                    placeholder="Enter number of safaris (e.g. 3)"
+                    className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-3 text-sm text-forest placeholder:text-forest/40 focus:outline-none focus:border-gold font-medium pr-24"
                   />
-
-                  {/* Interactive Step Buttons */}
-                  <div className="grid grid-cols-5 gap-2 pt-1">
-                    {[1, 2, 3, 4, 5].map((num) => {
-                      const isSelected = safaris === num;
-                      return (
-                        <button
-                          key={num}
-                          type="button"
-                          onClick={() => setSafaris(num)}
-                          className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border ${
-                            isSelected
-                              ? 'bg-forest text-sand border-forest shadow-md font-bold scale-[1.03]'
-                              : 'bg-white/80 hover:bg-white text-forest/70 border-forest/10 hover:border-forest/30'
-                          }`}
-                        >
-                          <span className={`text-sm ${isSelected ? 'text-gold font-extrabold' : 'font-semibold'}`}>
-                            {num}
-                          </span>
-                          <span className={`text-[10px] uppercase tracking-wider ${isSelected ? 'text-sand/80' : 'text-forest/50'}`}>
-                            {num === 1 ? 'Safari' : 'Safaris'}
-                          </span>
-                        </button>
-                      );
-                    })}
+                  <div className="absolute right-2 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => stepSafaris(-1)}
+                      disabled={safaris <= 1}
+                      className="w-8 h-8 rounded-lg bg-white/90 border border-forest/20 text-forest font-bold hover:bg-forest hover:text-sand transition disabled:opacity-30 flex items-center justify-center text-sm shadow-xs"
+                      aria-label="Decrease safaris"
+                    >
+                      −
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => stepSafaris(1)}
+                      disabled={safaris >= 15}
+                      className="w-8 h-8 rounded-lg bg-white/90 border border-forest/20 text-forest font-bold hover:bg-forest hover:text-sand transition disabled:opacity-30 flex items-center justify-center text-sm shadow-xs"
+                      aria-label="Increase safaris"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
-
-                <p className="text-[11px] text-forest/70 pt-2 border-t border-forest/10 flex items-center gap-1.5">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
-                  <span>
-                    {safaris === 1 && '1 safari drive — ideal for a quick reserve preview or short transit itinerary.'}
-                    {safaris === 2 && '2 safari drives — classic 1 night stay with 1 morning & 1 afternoon drive.'}
-                    {safaris === 3 && '3 safari drives — recommended for optimal tiger & predator tracking probabilities.'}
-                    {safaris === 4 && '4 safari drives — deep multi-zone core exploration across morning & afternoon shifts.'}
-                    {safaris === 5 && '5 safari drives — immersive master safari with maximum track-and-photography coverage.'}
-                  </span>
-                </p>
+                {safaris >= 15 && (
+                  <p className="text-[11px] text-forest/70 mt-1.5 flex items-center gap-1.5 animate-fadeIn">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
+                    <span>Looking to book more than 15 safaris? Please specify your required count in the Special Requirements below.</span>
+                  </p>
+                )}
               </div>
 
               <div className="block">
@@ -323,12 +349,16 @@ export const BookingPage: React.FC = () => {
               <div>
                 <span className={fieldLabel}>Special Requirements / Safari Notes (Optional)</span>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={specialNotes}
                   onChange={(e) => setSpecialNotes(e.target.value)}
-                  placeholder="e.g. Preferred gates (Moharli/Turia), dietary requests, target photography species..."
+                  placeholder="e.g. If you want to increase safaris beyond 15, mention your required count here. Preferred gates (Moharli/Turia), dietary requests, target photography species..."
                   className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-2.5 text-xs text-forest focus:outline-none focus:border-gold"
                 />
+                <p className="text-[11px] text-forest/60 mt-1.5 flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
+                  <span>If you want to increase the number of safaris beyond 15, please mention your required count here.</span>
+                </p>
               </div>
 
               <div className="space-y-3">

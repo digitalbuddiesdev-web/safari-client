@@ -170,20 +170,20 @@ export const DestinationDetailPage: React.FC = () => {
             </div>
 
             {/* Quick Metrics Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white sm:bg-black/55 backdrop-blur-md p-4 rounded-2xl border border-forest/10 sm:border-sand/20 max-w-4xl shadow-lg sm:shadow-2xl">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 bg-white sm:bg-black/60 backdrop-blur-md p-4 sm:p-5 sm:px-6 rounded-2xl border border-forest/10 sm:border-sand/20 w-full max-w-5xl lg:max-w-6xl shadow-lg sm:shadow-2xl">
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-forest/50 sm:text-sand/70 block">Core &amp; Buffer Area</span>
-                <span className="font-serif text-lg font-bold text-forest sm:text-sand">{destination.areaSqKm} km²</span>
+                <span className="text-[10px] sm:text-xs uppercase tracking-wider text-forest/50 sm:text-sand/70 block">Core &amp; Buffer Area</span>
+                <span className="font-serif text-lg sm:text-xl font-bold text-forest sm:text-sand">{destination.areaSqKm} km²</span>
               </div>
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-forest/50 sm:text-sand/70 block">Headline Species</span>
-                <span className="font-serif text-lg font-bold text-gold">
+                <span className="text-[10px] sm:text-xs uppercase tracking-wider text-forest/50 sm:text-sand/70 block">Headline Species</span>
+                <span className="font-serif text-lg sm:text-xl font-bold text-gold">
                   {destination.headlineSpecies || destination.tigerCount}
                 </span>
               </div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-forest/50 sm:text-sand/70 block">Prime Season</span>
-                <span className="font-serif text-lg font-bold text-forest sm:text-sand truncate block">{destination.bestTimeToVisit}</span>
+              <div className="col-span-2 sm:col-span-1">
+                <span className="text-[10px] sm:text-xs uppercase tracking-wider text-forest/50 sm:text-sand/70 block">Prime Season</span>
+                <span className="font-serif text-base sm:text-lg font-bold text-forest sm:text-sand leading-snug block">{destination.bestTimeToVisit}</span>
               </div>
             </div>
           </div>
