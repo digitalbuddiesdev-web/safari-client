@@ -440,12 +440,12 @@ export const BookingPage: React.FC = () => {
                   rows={3}
                   value={specialNotes}
                   onChange={(e) => setSpecialNotes(e.target.value)}
-                  placeholder="e.g. Additional booking details, requirements for 15+ safaris , preferred gates (Moharli/Turia), dietary requests, target photography species..."
+                  placeholder="e.g. Additional booking details, requirements for more than 15 safaris, preferred gates (Moharli/Turia), dietary requests, target photography species..."
                   className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-2.5 text-xs text-forest focus:outline-none focus:border-gold"
                 />
                 <p className="text-[11px] text-forest/60 mt-1.5 flex items-center gap-1.5">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
-                  <span>Enter any additional booking details, custom itinerary requests, or requirements exceeding 15 safaris here.</span>
+                  <span>Enter any additional booking details, custom itinerary requests, or requirements for more than 15 safaris here.</span>
                 </p>
               </div>
 
