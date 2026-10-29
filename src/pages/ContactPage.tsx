@@ -12,6 +12,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { cmsService } from '../services/api';
+import { validateName, validateEmail, validatePhone, validateRequired } from '../lib/validation';
+import { FormFieldError } from '../components/common/FormFieldError';
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,21 +22,48 @@ export const ContactPage: React.FC = () => {
     phone: '',
     message: ''
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [enquiryId, setEnquiryId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const clearFieldError = (field: string) => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: null } : prev));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.phone.trim() || formData.phone.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid Phone / WhatsApp number (minimum 10 digits).');
+    
+    const errors: Record<string, string | null> = {};
+    const nameErr = validateName(formData.name, 'Your name');
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(formData.phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    const msgErr = validateRequired(formData.message, 'Your Requirements and Notes', 5);
+    if (msgErr) errors.message = msgErr;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please review the highlighted fields before submitting.');
       return;
     }
+
     try {
       setLoading(true);
       setError(null);
-      const res = await cmsService.submitInquiry(formData);
+      setFieldErrors({});
+      const res = await cmsService.submitInquiry({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        message: formData.message.trim()
+      });
       setEnquiryId(res?.inquiry?.enquiryId || '');
       setSubmitted(true);
     } catch (err: any) {
@@ -187,60 +216,116 @@ export const ContactPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                      <label htmlFor="contact-name" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Your Full Name *
                       </label>
                       <input
+                        id="contact-name"
                         type="text"
-                        required
                         value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        onChange={e => {
+                          setFormData({ ...formData, name: e.target.value });
+                          clearFieldError('name');
+                        }}
+                        onBlur={() => {
+                          const err = validateName(formData.name, 'Your name');
+                          if (err) setFieldErrors(prev => ({ ...prev, name: err }));
+                        }}
                         placeholder="Dr. Anand Deshmukh"
-                        className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                        aria-invalid={!!fieldErrors.name}
+                        aria-describedby={fieldErrors.name ? 'contact-name-error' : undefined}
+                        className={`w-full px-4 py-3 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                          fieldErrors.name
+                            ? 'border-red-500 ring-1 ring-red-400/20'
+                            : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                        }`}
                       />
+                      <FormFieldError id="contact-name-error" error={fieldErrors.name} />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                      <label htmlFor="contact-email" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Email Address *
                       </label>
                       <input
+                        id="contact-email"
                         type="email"
-                        required
                         value={formData.email}
-                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        onChange={e => {
+                          setFormData({ ...formData, email: e.target.value });
+                          clearFieldError('email');
+                        }}
+                        onBlur={() => {
+                          const err = validateEmail(formData.email);
+                          if (err) setFieldErrors(prev => ({ ...prev, email: err }));
+                        }}
                         placeholder="anand@example.com"
-                        className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                        aria-invalid={!!fieldErrors.email}
+                        aria-describedby={fieldErrors.email ? 'contact-email-error' : undefined}
+                        className={`w-full px-4 py-3 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                          fieldErrors.email
+                            ? 'border-red-500 ring-1 ring-red-400/20'
+                            : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                        }`}
                       />
+                      <FormFieldError id="contact-email-error" error={fieldErrors.email} />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                    <div className="sm:col-span-2">
+                      <label htmlFor="contact-phone" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Phone / WhatsApp Number *
                       </label>
                       <input
+                        id="contact-phone"
                         type="tel"
-                        required
                         value={formData.phone}
-                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={e => {
+                          setFormData({ ...formData, phone: e.target.value });
+                          clearFieldError('phone');
+                        }}
+                        onBlur={() => {
+                          const err = validatePhone(formData.phone);
+                          if (err) setFieldErrors(prev => ({ ...prev, phone: err }));
+                        }}
                         placeholder="+91 98765 43210"
-                        className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                        aria-invalid={!!fieldErrors.phone}
+                        aria-describedby={fieldErrors.phone ? 'contact-phone-error' : undefined}
+                        className={`w-full px-4 py-3 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                          fieldErrors.phone
+                            ? 'border-red-500 ring-1 ring-red-400/20'
+                            : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                        }`}
                       />
+                      <FormFieldError id="contact-phone-error" error={fieldErrors.phone} />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                    <label htmlFor="contact-message" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                       Your Requirements and Notes *
                     </label>
                     <textarea
-                      required
+                      id="contact-message"
                       rows={5}
                       value={formData.message}
-                      onChange={e => setFormData({ ...formData, message: e.target.value })}
+                      onChange={e => {
+                        setFormData({ ...formData, message: e.target.value });
+                        clearFieldError('message');
+                      }}
+                      onBlur={() => {
+                        const err = validateRequired(formData.message, 'Your Requirements and Notes', 5);
+                        if (err) setFieldErrors(prev => ({ ...prev, message: err }));
+                      }}
                       placeholder="Tell us about your trip — reserve, dates, number of guests, or any special requests..."
-                      className="w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30 resize-none leading-relaxed"
+                      aria-invalid={!!fieldErrors.message}
+                      aria-describedby={fieldErrors.message ? 'contact-msg-error' : undefined}
+                      className={`w-full px-4 py-3 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none resize-none leading-relaxed transition-colors ${
+                        fieldErrors.message
+                          ? 'border-red-500 ring-1 ring-red-400/20'
+                          : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                      }`}
                     />
+                    <FormFieldError id="contact-msg-error" error={fieldErrors.message} />
                   </div>
 
                   <button

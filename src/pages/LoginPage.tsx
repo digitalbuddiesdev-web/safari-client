@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, AlertCircle, Compass } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
+import { validateEmail, validateRequired } from '../lib/validation';
+import { FormFieldError } from '../components/common/FormFieldError';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,12 +15,33 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: null } : prev));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: Record<string, string | null> = {};
+
+    const emailErr = validateEmail(email);
+    if (emailErr) errors.email = emailErr;
+
+    const passErr = validateRequired(password, 'Password', 1);
+    if (passErr) errors.password = passErr;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please enter your email and password to sign in.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      await login({ email, password });
+      setFieldErrors({});
+      await login({ email: email.trim(), password });
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get('redirect');
       navigate(redirect && redirect.startsWith('/') ? redirect : '/admin');
@@ -70,12 +93,23 @@ export const LoginPage: React.FC = () => {
                 <Mail className="w-4 h-4 text-forest/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
-                  required
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={e => {
+                    setEmail(e.target.value);
+                    clearFieldError('email');
+                  }}
+                  onBlur={() => {
+                    const err = validateEmail(email);
+                    if (err) setFieldErrors(prev => ({ ...prev, email: err }));
+                  }}
                   placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
+                  className={`w-full pl-10 pr-4 py-2.5 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                    fieldErrors.email ? 'border-red-500 ring-1 ring-red-400/20' : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                  }`}
                 />
+                <FormFieldError id="login-email-error" error={fieldErrors.email} />
               </div>
             </div>
 
@@ -92,12 +126,23 @@ export const LoginPage: React.FC = () => {
                 <Lock className="w-4 h-4 text-forest/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
-                  required
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    clearFieldError('password');
+                  }}
+                  onBlur={() => {
+                    const err = validateRequired(password, 'Password', 1);
+                    if (err) setFieldErrors(prev => ({ ...prev, password: err }));
+                  }}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={fieldErrors.password ? 'login-pass-error' : undefined}
+                  className={`w-full pl-10 pr-4 py-2.5 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                    fieldErrors.password ? 'border-red-500 ring-1 ring-red-400/20' : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                  }`}
                 />
+                <FormFieldError id="login-pass-error" error={fieldErrors.password} />
               </div>
             </div>
 

@@ -10,6 +10,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { cmsService } from '../services/api';
+import { validateName, validateEmail, validatePhone, validateRequired } from '../lib/validation';
+import { FormFieldError } from '../components/common/FormFieldError';
 import { getUpcomingTour } from '../lib/upcomingTours';
 import InstagramIcon from '../components/InstagramIcon';
 
@@ -18,20 +20,49 @@ export const UpcomingTourPage: React.FC = () => {
   const tour = getUpcomingTour(slug);
 
   const [form, setForm] = useState({ name: '', email: '', phone: '', preferredDates: '', message: '' });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const clearFieldError = (field: string) => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: null } : prev));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.phone.trim() || form.phone.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid Phone / WhatsApp number (minimum 10 digits).');
+
+    const errors: Record<string, string | null> = {};
+    const nameErr = validateName(form.name, 'Your name');
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(form.email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(form.phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    const msgErr = validateRequired(form.message, 'Your Question / Requirements', 5);
+    if (msgErr) errors.message = msgErr;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please review the highlighted fields before submitting.');
       return;
     }
+
     setLoading(true);
     setError(null);
+    setFieldErrors({});
     try {
-      await cmsService.submitInquiry({ ...form, destination: tour?.title });
+      await cmsService.submitInquiry({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        preferredDates: form.preferredDates,
+        message: form.message.trim(),
+        destination: tour?.title
+      });
       setSubmitted(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send enquiry. Please try again.');
@@ -196,49 +227,80 @@ export const UpcomingTourPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                      <label htmlFor="tour-name" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Your Full Name *
                       </label>
                       <input
+                        id="tour-name"
                         type="text"
-                        required
                         value={form.name}
-                        onChange={e => setForm({ ...form, name: e.target.value })}
+                        onChange={e => {
+                          setForm({ ...form, name: e.target.value });
+                          clearFieldError('name');
+                        }}
+                        onBlur={() => {
+                          const err = validateName(form.name, 'Your name');
+                          if (err) setFieldErrors(prev => ({ ...prev, name: err }));
+                        }}
                         placeholder="Dr. Anand Deshmukh"
-                        className={inputClass}
+                        aria-invalid={!!fieldErrors.name}
+                        aria-describedby={fieldErrors.name ? 'tour-name-error' : undefined}
+                        className={`${inputClass} ${fieldErrors.name ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                       />
+                      <FormFieldError id="tour-name-error" error={fieldErrors.name} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                      <label htmlFor="tour-email" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Email Address *
                       </label>
                       <input
+                        id="tour-email"
                         type="email"
-                        required
                         value={form.email}
-                        onChange={e => setForm({ ...form, email: e.target.value })}
+                        onChange={e => {
+                          setForm({ ...form, email: e.target.value });
+                          clearFieldError('email');
+                        }}
+                        onBlur={() => {
+                          const err = validateEmail(form.email);
+                          if (err) setFieldErrors(prev => ({ ...prev, email: err }));
+                        }}
                         placeholder="anand@example.com"
-                        className={inputClass}
+                        aria-invalid={!!fieldErrors.email}
+                        aria-describedby={fieldErrors.email ? 'tour-email-error' : undefined}
+                        className={`${inputClass} ${fieldErrors.email ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                       />
+                      <FormFieldError id="tour-email-error" error={fieldErrors.email} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                      <label htmlFor="tour-phone" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                         Phone / WhatsApp Number *
                       </label>
                       <input
+                        id="tour-phone"
                         type="tel"
-                        required
                         value={form.phone}
-                        onChange={e => setForm({ ...form, phone: e.target.value })}
+                        onChange={e => {
+                          setForm({ ...form, phone: e.target.value });
+                          clearFieldError('phone');
+                        }}
+                        onBlur={() => {
+                          const err = validatePhone(form.phone);
+                          if (err) setFieldErrors(prev => ({ ...prev, phone: err }));
+                        }}
                         placeholder="+91 98765 43210"
-                        className={inputClass}
+                        aria-invalid={!!fieldErrors.phone}
+                        aria-describedby={fieldErrors.phone ? 'tour-phone-error' : undefined}
+                        className={`${inputClass} ${fieldErrors.phone ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                       />
+                      <FormFieldError id="tour-phone-error" error={fieldErrors.phone} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
-                        Preferred Departure Date
+                      <label htmlFor="tour-dates" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                        Preferred Departure Date (Optional)
                       </label>
                       <select
+                        id="tour-dates"
                         value={form.preferredDates}
                         onChange={e => setForm({ ...form, preferredDates: e.target.value })}
                         className={inputClass}
@@ -254,17 +316,27 @@ export const UpcomingTourPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                    <label htmlFor="tour-message" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
                       Your Question / Requirements *
                     </label>
                     <textarea
-                      required
+                      id="tour-message"
                       rows={5}
                       value={form.message}
-                      onChange={e => setForm({ ...form, message: e.target.value })}
+                      onChange={e => {
+                        setForm({ ...form, message: e.target.value });
+                        clearFieldError('message');
+                      }}
+                      onBlur={() => {
+                        const err = validateRequired(form.message, 'Your Question / Requirements', 5);
+                        if (err) setFieldErrors(prev => ({ ...prev, message: err }));
+                      }}
                       placeholder={`I'm interested in the ${tour.title} departure. Please share availability, pricing and what's included...`}
-                      className={`${inputClass} resize-none leading-relaxed`}
+                      aria-invalid={!!fieldErrors.message}
+                      aria-describedby={fieldErrors.message ? 'tour-msg-error' : undefined}
+                      className={`${inputClass} resize-none leading-relaxed ${fieldErrors.message ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                     />
+                    <FormFieldError id="tour-msg-error" error={fieldErrors.message} />
                   </div>
 
                   <button

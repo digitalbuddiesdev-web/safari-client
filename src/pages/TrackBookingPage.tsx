@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { bookingService } from '../services/api';
+import { validateEmail, validatePhone, validateRequired } from '../lib/validation';
+import { FormFieldError } from '../components/common/FormFieldError';
 import { Booking } from '../types';
 
 const STATUS: Record<Booking['bookingStatus'], { label: string; cls: string; note: string }> = {
@@ -25,13 +27,47 @@ const TrackBookingPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: null } : prev));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: Record<string, string | null> = {};
+
+    const refErr = validateRequired(ref, 'Booking reference', 4);
+    if (refErr) errors.ref = refErr;
+
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedEmail && !trimmedPhone) {
+      errors.contact = 'Please provide either your booking email or phone number.';
+    } else {
+      if (trimmedEmail) {
+        const eErr = validateEmail(trimmedEmail);
+        if (eErr) errors.email = eErr;
+      }
+      if (trimmedPhone) {
+        const pErr = validatePhone(trimmedPhone);
+        if (pErr) errors.phone = pErr;
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please review the highlighted fields before submitting.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setFieldErrors({});
     setBooking(null);
     try {
-      setBooking(await bookingService.track({ ref: ref.trim(), email: email.trim() || undefined, phone: phone.trim() || undefined }));
+      setBooking(await bookingService.track({ ref: ref.trim().toUpperCase(), email: trimmedEmail || undefined, phone: trimmedPhone || undefined }));
     } catch (err: any) {
       setError(err.response?.data?.message || 'No booking matches that reference and contact.');
     } finally {
@@ -56,36 +92,89 @@ const TrackBookingPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">Booking Reference</label>
+              <label htmlFor="track-ref" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                Booking Reference *
+              </label>
               <input
-                required
+                id="track-ref"
                 value={ref}
-                onChange={(e) => setRef(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setRef(e.target.value.toUpperCase());
+                  clearFieldError('ref');
+                }}
+                onBlur={() => {
+                  const err = validateRequired(ref, 'Booking reference', 4);
+                  if (err) setFieldErrors(prev => ({ ...prev, ref: err }));
+                }}
                 placeholder="SNS-2026-1234"
-                className="w-full px-4 py-2.5 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                aria-invalid={!!fieldErrors.ref}
+                aria-describedby={fieldErrors.ref ? 'track-ref-error' : undefined}
+                className={`w-full px-4 py-2.5 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                  fieldErrors.ref ? 'border-red-500 ring-1 ring-red-400/20' : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                }`}
               />
+              <FormFieldError id="track-ref-error" error={fieldErrors.ref} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">Email</label>
+                <label htmlFor="track-email" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                  Email (Either Email or Phone)
+                </label>
                 <input
+                  id="track-email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFieldError('email');
+                    clearFieldError('contact');
+                  }}
+                  onBlur={() => {
+                    if (email.trim()) {
+                      const err = validateEmail(email);
+                      if (err) setFieldErrors(prev => ({ ...prev, email: err }));
+                    }
+                  }}
                   placeholder="name@example.com"
-                  className="w-full px-4 py-2.5 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={fieldErrors.email ? 'track-email-error' : undefined}
+                  className={`w-full px-4 py-2.5 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                    fieldErrors.email ? 'border-red-500 ring-1 ring-red-400/20' : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                  }`}
                 />
+                <FormFieldError id="track-email-error" error={fieldErrors.email} />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">Or Phone</label>
+                <label htmlFor="track-phone" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                  Or Phone
+                </label>
                 <input
+                  id="track-phone"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    clearFieldError('phone');
+                    clearFieldError('contact');
+                  }}
+                  onBlur={() => {
+                    if (phone.trim()) {
+                      const err = validatePhone(phone);
+                      if (err) setFieldErrors(prev => ({ ...prev, phone: err }));
+                    }
+                  }}
                   placeholder="+91 98765 43210"
-                  className="w-full px-4 py-2.5 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
+                  aria-invalid={!!fieldErrors.phone}
+                  aria-describedby={fieldErrors.phone ? 'track-phone-error' : undefined}
+                  className={`w-full px-4 py-2.5 bg-sand/30 border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                    fieldErrors.phone ? 'border-red-500 ring-1 ring-red-400/20' : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                  }`}
                 />
+                <FormFieldError id="track-phone-error" error={fieldErrors.phone} />
               </div>
             </div>
+            {fieldErrors.contact && (
+              <FormFieldError error={fieldErrors.contact} />
+            )}
 
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center space-x-2">

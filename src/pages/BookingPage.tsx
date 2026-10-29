@@ -13,6 +13,15 @@ import {
 import { SafariCalendar } from '../components/SafariCalendar';
 import { destinationService, cmsService } from '../services/api';
 import { Destination } from '../types';
+import { 
+  validateName, 
+  validateEmail, 
+  validatePhone, 
+  validateSafaris, 
+  validateGuests, 
+  validateTravelDate 
+} from '../lib/validation';
+import { FormFieldError } from '../components/common/FormFieldError';
 
 const fmtDate = (iso: string) =>
   iso
@@ -56,54 +65,56 @@ export const BookingPage: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [safaris, setSafaris] = useState(3);
   const [safarisInput, setSafarisInput] = useState('3');
-
-  const handleSafarisChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    setSafarisInput(raw);
-    if (raw === '') return;
-    const val = parseInt(raw, 10);
-    if (!isNaN(val)) {
-      if (val > 15) {
-        setSafaris(15);
-        setSafarisInput('15');
-      } else if (val < 1) {
-        setSafaris(1);
-      } else {
-        setSafaris(val);
-      }
-    }
-  };
-
-  const handleSafarisBlur = () => {
-    if (safarisInput === '' || isNaN(Number(safarisInput)) || Number(safarisInput) < 1) {
-      setSafaris(1);
-      setSafarisInput('1');
-    } else if (Number(safarisInput) > 15) {
-      setSafaris(15);
-      setSafarisInput('15');
-    } else {
-      const val = Math.round(Number(safarisInput));
-      setSafaris(val);
-      setSafarisInput(String(val));
-    }
-  };
-
-  const stepSafaris = (delta: number) => {
-    const current = Number(safarisInput) || safaris || 1;
-    const next = Math.max(1, Math.min(15, current + delta));
-    setSafaris(next);
-    setSafarisInput(String(next));
-  };
-  const [adults, setAdults] = useState(0);
+  const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
   const [calendarFor, setCalendarFor] = useState<'start' | 'end' | null>(null);
   const [contact, setContact] = useState({ name: '', email: '', phone: '' });
   const [specialNotes, setSpecialNotes] = useState('');
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: null } : prev));
+  };
+
+  const handleSafarisChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setSafarisInput(raw);
+    clearFieldError('safaris');
+    const val = parseInt(raw, 10);
+    if (!isNaN(val)) {
+      setSafaris(val);
+    }
+  };
+
+  const handleSafarisBlur = () => {
+    if (safarisInput.trim() === '') {
+      setSafaris(3);
+      setSafarisInput('3');
+      clearFieldError('safaris');
+      return;
+    }
+    const val = parseInt(safarisInput, 10);
+    if (isNaN(val) || val < 1) {
+      setSafaris(1);
+      setSafarisInput('1');
+    } else {
+      setSafaris(val);
+      setSafarisInput(String(val));
+    }
+  };
+
+  const stepSafaris = (delta: number) => {
+    const current = parseInt(safarisInput, 10) || safaris || 1;
+    const next = Math.max(1, current + delta);
+    setSafaris(next);
+    setSafarisInput(String(next));
+    clearFieldError('safaris');
+  };
 
   useEffect(() => {
     destinationService.getAll({ limit: 100 }).then(setDestinations).catch(() => {});
@@ -120,6 +131,7 @@ export const BookingPage: React.FC = () => {
 
   const pickStart = (iso: string) => {
     setStartDate(iso);
+    clearFieldError('startDate');
     setEndDate((prev) => (prev && prev < iso ? '' : prev));
     setCalendarFor(null);
   };
@@ -135,26 +147,38 @@ export const BookingPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!startDate) {
-      setError('Please choose a travel date to help us quote.');
+    
+    // Comprehensive field validation
+    const errors: Record<string, string | null> = {};
+    const dateErr = validateTravelDate(startDate, 'Travel date');
+    if (dateErr) errors.startDate = dateErr;
+
+    const safarisErr = validateSafaris(safarisInput);
+    if (safarisErr) errors.safaris = safarisErr;
+
+    const guestsErr = validateGuests(guestCount);
+    if (guestsErr) errors.guests = guestsErr;
+
+    const nameErr = validateName(contact.name, 'Full name');
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(contact.email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(contact.phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please review the highlighted fields before submitting.');
       return;
     }
-    if (!contact.name.trim()) {
-      setError('Please enter your name.');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (!contact.phone.trim() || contact.phone.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid Phone / WhatsApp number (minimum 10 digits).');
-      return;
-    }
+
     setSubmitting(true);
     setError(null);
+    setFieldErrors({});
 
-    const finalSafaris = Math.max(1, Math.min(15, Number(safarisInput) || safaris || 1));
+    const finalSafaris = parseInt(safarisInput, 10);
     const formattedMessage = `Custom journey enquiry — Reserve: ${destinationName || 'Flexible'} · Dates: ${dateRange || 'Flexible'} · Safaris: ${finalSafaris} · Guests: ${guestsLabel}${
       specialNotes.trim() ? `\n\n[Special Notes]: ${specialNotes.trim()}` : ''
     }`;
@@ -239,17 +263,23 @@ export const BookingPage: React.FC = () => {
 
               <div>
                 <span className={fieldLabel}>
-                  <Calendar className="w-3.5 h-3.5 text-gold" /> Travel Dates
+                  <Calendar className="w-3.5 h-3.5 text-gold" /> Travel Dates *
                 </span>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setCalendarFor(calendarFor === 'start' ? null : 'start')}
+                    aria-invalid={!!fieldErrors.startDate}
+                    aria-describedby={fieldErrors.startDate ? 'startdate-error' : undefined}
                     className={`text-left bg-sand border rounded-xl px-4 py-3 transition-colors ${
-                      calendarFor === 'start' ? 'border-gold' : 'border-forest/20'
+                      fieldErrors.startDate
+                        ? 'border-red-500 ring-1 ring-red-400/20'
+                        : calendarFor === 'start'
+                        ? 'border-gold'
+                        : 'border-forest/20'
                     }`}
                   >
-                    <span className="text-[10px] text-forest/50 block">Start</span>
+                    <span className="text-[10px] text-forest/50 block">Start *</span>
                     <span className={`text-sm font-medium ${startDate ? 'text-forest' : 'text-forest/40'}`}>
                       {startDate ? fmtDate(startDate) : 'Select date'}
                     </span>
@@ -261,7 +291,7 @@ export const BookingPage: React.FC = () => {
                       calendarFor === 'end' ? 'border-gold' : 'border-forest/20'
                     }`}
                   >
-                    <span className="text-[10px] text-forest/50 block">End</span>
+                    <span className="text-[10px] text-forest/50 block">End (Optional)</span>
                     <span className={`text-sm font-medium ${endDate ? 'text-forest' : 'text-forest/40'}`}>
                       {endDate ? fmtDate(endDate) : 'Select date'}
                     </span>
@@ -276,6 +306,9 @@ export const BookingPage: React.FC = () => {
                     />
                   </div>
                 )}
+                {fieldErrors.startDate && (
+                  <FormFieldError id="startdate-error" error={fieldErrors.startDate} />
+                )}
                 {nights > 0 && (
                   <p className="text-xs text-forest/60 mt-2">
                     {nights} night{nights === 1 ? '' : 's'} / {nights + 1} days
@@ -283,13 +316,15 @@ export const BookingPage: React.FC = () => {
                 )}
               </div>
 
-              {/* No. of Safaris (Open Field) */}
+              {/* No. of Safaris (Number Input) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="safaris-input" className={fieldLabel.replace(' mb-2', '')}>
-                    <Compass className="w-3.5 h-3.5 text-gold" /> No. of Safaris
+                    <Compass className="w-3.5 h-3.5 text-gold" /> No. of Safaris *
                   </label>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-forest text-gold text-xs font-semibold">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    Number(safarisInput) > 15 ? 'bg-amber-600 text-white' : 'bg-forest text-gold'
+                  }`}>
                     {safaris} {safaris === 1 ? 'Safari Drive' : 'Safari Drives'}
                   </span>
                 </div>
@@ -302,8 +337,16 @@ export const BookingPage: React.FC = () => {
                     value={safarisInput}
                     onChange={handleSafarisChange}
                     onBlur={handleSafarisBlur}
-                    placeholder="Enter number of safaris (e.g. 3)"
-                    className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-3 text-sm text-forest placeholder:text-forest/40 focus:outline-none focus:border-gold font-medium pr-24"
+                    placeholder="Enter number of safaris (1-15)"
+                    aria-invalid={!!fieldErrors.safaris || Number(safarisInput) > 15}
+                    aria-describedby={Number(safarisInput) > 15 ? 'safaris-limit-msg' : fieldErrors.safaris ? 'safaris-error' : undefined}
+                    className={`w-full bg-sand border rounded-xl px-4 py-3 text-sm text-forest placeholder:text-forest/40 focus:outline-none font-medium pr-24 transition-colors ${
+                      Number(safarisInput) > 15
+                        ? 'border-amber-500 focus:border-amber-600 ring-1 ring-amber-500/20'
+                        : fieldErrors.safaris
+                        ? 'border-red-500 focus:border-red-600 ring-1 ring-red-400/20'
+                        : 'border-forest/20 focus:border-gold'
+                    }`}
                   />
                   <div className="absolute right-2 flex items-center gap-1.5">
                     <button
@@ -318,31 +361,76 @@ export const BookingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => stepSafaris(1)}
-                      disabled={safaris >= 15}
-                      className="w-8 h-8 rounded-lg bg-white/90 border border-forest/20 text-forest font-bold hover:bg-forest hover:text-sand transition disabled:opacity-30 flex items-center justify-center text-sm shadow-xs"
+                      className="w-8 h-8 rounded-lg bg-white/90 border border-forest/20 text-forest font-bold hover:bg-forest hover:text-sand transition flex items-center justify-center text-sm shadow-xs"
                       aria-label="Increase safaris"
                     >
                       +
                     </button>
                   </div>
                 </div>
-                {safaris >= 15 && (
-                  <p className="text-[11px] text-forest/70 mt-1.5 flex items-center gap-1.5 animate-fadeIn">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
-                    <span>Looking to book more than 15 safaris? Please specify your required count in the Special Requirements below.</span>
-                  </p>
+                {Number(safarisInput) > 15 && (
+                  <div id="safaris-limit-msg" className="p-3 bg-amber-50 border border-amber-300/80 text-amber-900 text-xs rounded-xl flex items-start gap-2.5 mt-2.5 shadow-xs animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">
+                      For bookings of more than 15 Safaris, please mention your requirements in the <strong>Special Requirements / Safari Notes (Optional)</strong> section. Our team will assist you with your booking.
+                    </span>
+                  </div>
+                )}
+                {fieldErrors.safaris && Number(safarisInput) <= 15 && (
+                  <FormFieldError id="safaris-error" error={fieldErrors.safaris} />
                 )}
               </div>
 
               <div className="block">
-                <span className={fieldLabel}>
-                  <Users className="w-3.5 h-3.5 text-gold" /> Travellers
-                </span>
-                <div className="space-y-2.5">
-                  <Counter label="Adults" value={adults} onChange={setAdults} />
-                  <Counter label="Children" value={children} onChange={setChildren} />
-                  <Counter label="Infants" value={infants} onChange={setInfants} />
+                <div className="flex items-center justify-between mb-2">
+                  <span className={fieldLabel.replace(' mb-2', '')}>
+                    <Users className="w-3.5 h-3.5 text-gold" /> Travellers *
+                  </span>
+                  {guestCount > 0 && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      guestCount > 15 ? 'bg-amber-600 text-white' : 'bg-forest/10 text-forest'
+                    }`}>
+                      {guestCount} {guestCount === 1 ? 'Guest' : 'Guests'}
+                    </span>
+                  )}
                 </div>
+                <div className="space-y-2.5">
+                  <Counter
+                    label="Adults"
+                    value={adults}
+                    onChange={(n) => {
+                      setAdults(n);
+                      clearFieldError('guests');
+                    }}
+                  />
+                  <Counter
+                    label="Children"
+                    value={children}
+                    onChange={(n) => {
+                      setChildren(n);
+                      clearFieldError('guests');
+                    }}
+                  />
+                  <Counter
+                    label="Infants"
+                    value={infants}
+                    onChange={(n) => {
+                      setInfants(n);
+                      clearFieldError('guests');
+                    }}
+                  />
+                </div>
+                {guestCount > 15 && (
+                  <div id="guests-limit-msg" className="p-3 bg-amber-50 border border-amber-300/80 text-amber-900 text-xs rounded-xl flex items-start gap-2.5 mt-2.5 shadow-xs animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">
+                      For bookings of more than 15 guests, please mention your group size and requirements in the <strong>Special Requirements / Safari Notes (Optional)</strong> section. Our team will assist you with your booking.
+                    </span>
+                  </div>
+                )}
+                {fieldErrors.guests && guestCount <= 15 && (
+                  <FormFieldError id="guests-error" error={fieldErrors.guests} />
+                )}
               </div>
 
               {/* Special Notes */}
@@ -352,41 +440,87 @@ export const BookingPage: React.FC = () => {
                   rows={3}
                   value={specialNotes}
                   onChange={(e) => setSpecialNotes(e.target.value)}
-                  placeholder="e.g. If you want to increase safaris beyond 15, mention your required count here. Preferred gates (Moharli/Turia), dietary requests, target photography species..."
+                  placeholder="e.g. Additional booking details, requirements for >15 safaris or >15 guests, preferred gates (Moharli/Turia), dietary requests, target photography species..."
                   className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-2.5 text-xs text-forest focus:outline-none focus:border-gold"
                 />
                 <p className="text-[11px] text-forest/60 mt-1.5 flex items-center gap-1.5">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold shrink-0"></span>
-                  <span>If you want to increase the number of safaris beyond 15, please mention your required count here.</span>
+                  <span>Enter any additional booking details, custom itinerary requests, or requirements exceeding 15 safaris/guests here.</span>
                 </p>
               </div>
 
               <div className="space-y-3">
-                <span className={fieldLabel}>Your Contact Details</span>
-                <input
-                  type="text"
-                  value={contact.name}
-                  onChange={(e) => setContact((c) => ({ ...c, name: e.target.value }))}
-                  placeholder="Full name *"
-                  className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-3.5 text-sm text-forest focus:outline-none focus:border-gold"
-                />
+                <span className={fieldLabel}>Your Contact Details *</span>
+                <div>
+                  <input
+                    type="text"
+                    value={contact.name}
+                    onChange={(e) => {
+                      setContact((c) => ({ ...c, name: e.target.value }));
+                      clearFieldError('name');
+                    }}
+                    onBlur={() => {
+                      const err = validateName(contact.name, 'Full name');
+                      if (err) setFieldErrors(prev => ({ ...prev, name: err }));
+                    }}
+                    placeholder="Full name *"
+                    aria-invalid={!!fieldErrors.name}
+                    aria-describedby={fieldErrors.name ? 'name-error' : undefined}
+                    className={`w-full bg-sand border rounded-xl px-4 py-3.5 text-sm text-forest placeholder:text-forest/40 focus:outline-none transition-colors ${
+                      fieldErrors.name
+                        ? 'border-red-500 focus:border-red-600 ring-1 ring-red-400/20'
+                        : 'border-forest/20 focus:border-gold'
+                    }`}
+                  />
+                  <FormFieldError id="name-error" error={fieldErrors.name} />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="email"
-                    required
-                    value={contact.email}
-                    onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
-                    placeholder="Email address *"
-                    className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-3.5 text-sm text-forest focus:outline-none focus:border-gold"
-                  />
-                  <input
-                    type="tel"
-                    required
-                    value={contact.phone}
-                    onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
-                    placeholder="Phone / WhatsApp Number *"
-                    className="w-full bg-sand border border-forest/20 rounded-xl px-4 py-3.5 text-sm text-forest focus:outline-none focus:border-gold"
-                  />
+                  <div>
+                    <input
+                      type="email"
+                      value={contact.email}
+                      onChange={(e) => {
+                        setContact((c) => ({ ...c, email: e.target.value }));
+                        clearFieldError('email');
+                      }}
+                      onBlur={() => {
+                        const err = validateEmail(contact.email);
+                        if (err) setFieldErrors(prev => ({ ...prev, email: err }));
+                      }}
+                      placeholder="Email address *"
+                      aria-invalid={!!fieldErrors.email}
+                      aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+                      className={`w-full bg-sand border rounded-xl px-4 py-3.5 text-sm text-forest placeholder:text-forest/40 focus:outline-none transition-colors ${
+                        fieldErrors.email
+                          ? 'border-red-500 focus:border-red-600 ring-1 ring-red-400/20'
+                          : 'border-forest/20 focus:border-gold'
+                      }`}
+                    />
+                    <FormFieldError id="email-error" error={fieldErrors.email} />
+                  </div>
+                  <div>
+                    <input
+                      type="tel"
+                      value={contact.phone}
+                      onChange={(e) => {
+                        setContact((c) => ({ ...c, phone: e.target.value }));
+                        clearFieldError('phone');
+                      }}
+                      onBlur={() => {
+                        const err = validatePhone(contact.phone);
+                        if (err) setFieldErrors(prev => ({ ...prev, phone: err }));
+                      }}
+                      placeholder="Phone / WhatsApp Number *"
+                      aria-invalid={!!fieldErrors.phone}
+                      aria-describedby={fieldErrors.phone ? 'phone-error' : undefined}
+                      className={`w-full bg-sand border rounded-xl px-4 py-3.5 text-sm text-forest placeholder:text-forest/40 focus:outline-none transition-colors ${
+                        fieldErrors.phone
+                          ? 'border-red-500 focus:border-red-600 ring-1 ring-red-400/20'
+                          : 'border-forest/20 focus:border-gold'
+                      }`}
+                    />
+                    <FormFieldError id="phone-error" error={fieldErrors.phone} />
+                  </div>
                 </div>
               </div>
 
@@ -418,13 +552,15 @@ export const BookingPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-sand/60">No. of Safaris</span>
-                    <span className="font-semibold text-right text-gold">
+                    <span className={`font-semibold text-right ${safaris > 15 ? 'text-amber-400' : 'text-gold'}`}>
                       {safaris} {safaris === 1 ? 'Safari Drive' : 'Safari Drives'}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-sand/60">Travellers</span>
-                    <span className="font-semibold text-right">{guestsLabel}</span>
+                    <span className={`font-semibold text-right ${guestCount > 15 ? 'text-amber-400' : ''}`}>
+                      {guestsLabel}
+                    </span>
                   </div>
                 </div>
                 <div className="border-t border-sand/20 pt-4">

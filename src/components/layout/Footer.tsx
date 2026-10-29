@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, ArrowRight, ShieldCheck, ChevronDown } from 'lucide-react';
 import { cmsService } from '../../services/api';
+import { validateEmail } from '../../lib/validation';
 import { CONTACT_EMAIL } from '../../lib/site';
 
 // Collapsed to an accordion on mobile so the footer stays short; always open from lg up.
@@ -35,15 +36,19 @@ export const Footer: React.FC = () => {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    const err = validateEmail(email);
+    if (err) {
+      setError(err);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await cmsService.subscribeNewsletter(email);
+      await cmsService.subscribeNewsletter(email.trim());
       setSubscribed(true);
       setEmail('');
-    } catch (err) {
-      setError('Could not subscribe. Please try again.');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Could not subscribe. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -110,11 +115,16 @@ export const Footer: React.FC = () => {
                 <div className="relative">
                   <input
                     type="email"
-                    required
-                    placeholder="Enter your email"
+                    placeholder="Enter your email *"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-forest-deep border border-sand/25 rounded px-3 py-2 text-xs text-sand placeholder-sand/50 focus:outline-none focus:border-gold"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError('');
+                    }}
+                    aria-invalid={!!error}
+                    className={`w-full bg-forest-deep border rounded px-3 py-2 text-xs text-sand placeholder-sand/50 focus:outline-none transition-colors ${
+                      error ? 'border-red-400 focus:border-red-500' : 'border-sand/25 focus:border-gold'
+                    }`}
                   />
                   <button
                     type="submit"

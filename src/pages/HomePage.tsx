@@ -13,6 +13,8 @@ import { stateCode, YEARS_OF_EXPERIENCE } from '../lib/site';
 import { UPCOMING_TOURS } from '../lib/upcomingTours';
 import InstagramIcon from '../components/InstagramIcon';
 import { Carousel } from '../components/Carousel';
+import { validateName, validateEmail, validatePhone, validateGuests } from '../lib/validation';
+import { FormFieldError } from '../components/common/FormFieldError';
 import { GalleryLightbox } from '../components/GalleryLightbox';
 import { ClientStoriesSection } from '../components/home/ClientStoriesSection';
 import { 
@@ -130,6 +132,7 @@ export const HomePage: React.FC = () => {
   const [quoteSent, setQuoteSent] = useState(false);
   const [quoteSubmitting, setQuoteSubmitting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteFieldErrors, setQuoteFieldErrors] = useState<Record<string, string | null>>({});
   const [quoteContact, setQuoteContact] = useState({ name: '', email: '', phone: '' });
 
   const quoteDestinationName =
@@ -137,7 +140,16 @@ export const HomePage: React.FC = () => {
   const quoteDates = [fmtQuoteDate(searchDate), fmtQuoteDate(searchEndDate)].filter(Boolean).join(' – ');
   const quoteGuests = searchGuests === '6' ? 'Private Safari Jeep (6 guests)' : `${searchGuests} guest${searchGuests === '1' ? '' : 's'}`;
 
-  const openQuote = () => { setQuoteSent(false); setQuoteError(null); setQuoteOpen(true); };
+  const clearQuoteFieldError = (field: string) => {
+    setQuoteFieldErrors(prev => (prev[field] ? { ...prev, [field]: null } : prev));
+  };
+
+  const openQuote = () => {
+    setQuoteSent(false);
+    setQuoteError(null);
+    setQuoteFieldErrors({});
+    setQuoteOpen(true);
+  };
   const closeQuote = () => setQuoteOpen(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -148,11 +160,30 @@ export const HomePage: React.FC = () => {
   const handleQuoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, email, phone } = quoteContact;
-    if (name.trim().length < 3) return setQuoteError("Enter your full name.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setQuoteError('Enter a valid email address.');
-    if (phone.replace(/\D/g, '').length < 10) return setQuoteError('Enter a valid Phone / WhatsApp number (minimum 10 digits).');
+
+    const errors: Record<string, string | null> = {};
+    const nameErr = validateName(name, 'Full name');
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    const guestsCount = Number(searchGuests) || 2;
+    const guestsErr = validateGuests(guestsCount);
+    if (guestsErr) errors.guests = guestsErr;
+
+    if (Object.keys(errors).length > 0) {
+      setQuoteFieldErrors(errors);
+      setQuoteError('Please review the highlighted fields before submitting.');
+      return;
+    }
+
     setQuoteSubmitting(true);
     setQuoteError(null);
+    setQuoteFieldErrors({});
     try {
       await cmsService.submitInquiry({
         name: name.trim(),
@@ -160,7 +191,7 @@ export const HomePage: React.FC = () => {
         phone: phone.trim(),
         destination: quoteDestinationName || 'Any / Unsure',
         preferredDates: quoteDates,
-        guests: Number(searchGuests),
+        guests: guestsCount,
         message: `Quote request — Reserve: ${quoteDestinationName || 'Any / Unsure'}; Dates: ${quoteDates || 'flexible'}; Guests: ${quoteGuests}.`,
       });
       setQuoteSent(true);
@@ -170,6 +201,8 @@ export const HomePage: React.FC = () => {
       setQuoteSubmitting(false);
     }
   };
+
+  
 
   // Hand-picked spotlight order + marketing copy for the homepage rail.
   const featuredDestinations = [
@@ -650,31 +683,76 @@ export const HomePage: React.FC = () => {
                 )}
 
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    required
-                    value={quoteContact.name}
-                    onChange={(e) => setQuoteContact({ ...quoteContact, name: e.target.value })}
-                    placeholder="Full name"
-                    className="w-full px-4 py-3 bg-sand-warm border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      value={quoteContact.name}
+                      onChange={(e) => {
+                        setQuoteContact({ ...quoteContact, name: e.target.value });
+                        clearQuoteFieldError('name');
+                      }}
+                      onBlur={() => {
+                        const err = validateName(quoteContact.name, 'Full name');
+                        if (err) setQuoteFieldErrors(prev => ({ ...prev, name: err }));
+                      }}
+                      placeholder="Full name *"
+                      aria-invalid={!!quoteFieldErrors.name}
+                      aria-describedby={quoteFieldErrors.name ? 'quote-name-error' : undefined}
+                      className={`w-full px-4 py-3 bg-sand-warm border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                        quoteFieldErrors.name
+                          ? 'border-red-500 ring-1 ring-red-400/20'
+                          : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                      }`}
+                    />
+                    <FormFieldError id="quote-name-error" error={quoteFieldErrors.name} />
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="email"
-                      required
-                      value={quoteContact.email}
-                      onChange={(e) => setQuoteContact({ ...quoteContact, email: e.target.value })}
-                      placeholder="Email address"
-                      className="w-full px-4 py-3 bg-sand-warm border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
-                    />
-                    <input
-                      type="tel"
-                      required
-                      value={quoteContact.phone}
-                      onChange={(e) => setQuoteContact({ ...quoteContact, phone: e.target.value })}
-                      placeholder="Phone / WhatsApp number *"
-                      className="w-full px-4 py-3 bg-sand-warm border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30"
-                    />
+                    <div>
+                      <input
+                        type="email"
+                        value={quoteContact.email}
+                        onChange={(e) => {
+                          setQuoteContact({ ...quoteContact, email: e.target.value });
+                          clearQuoteFieldError('email');
+                        }}
+                        onBlur={() => {
+                          const err = validateEmail(quoteContact.email);
+                          if (err) setQuoteFieldErrors(prev => ({ ...prev, email: err }));
+                        }}
+                        placeholder="Email address *"
+                        aria-invalid={!!quoteFieldErrors.email}
+                        aria-describedby={quoteFieldErrors.email ? 'quote-email-error' : undefined}
+                        className={`w-full px-4 py-3 bg-sand-warm border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                          quoteFieldErrors.email
+                            ? 'border-red-500 ring-1 ring-red-400/20'
+                            : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                        }`}
+                      />
+                      <FormFieldError id="quote-email-error" error={quoteFieldErrors.email} />
+                    </div>
+                    <div>
+                      <input
+                        type="tel"
+                        value={quoteContact.phone}
+                        onChange={(e) => {
+                          setQuoteContact({ ...quoteContact, phone: e.target.value });
+                          clearQuoteFieldError('phone');
+                        }}
+                        onBlur={() => {
+                          const err = validatePhone(quoteContact.phone);
+                          if (err) setQuoteFieldErrors(prev => ({ ...prev, phone: err }));
+                        }}
+                        placeholder="Phone / WhatsApp number *"
+                        aria-invalid={!!quoteFieldErrors.phone}
+                        aria-describedby={quoteFieldErrors.phone ? 'quote-phone-error' : undefined}
+                        className={`w-full px-4 py-3 bg-sand-warm border rounded-xl text-xs text-forest focus:outline-none transition-colors ${
+                          quoteFieldErrors.phone
+                            ? 'border-red-500 ring-1 ring-red-400/20'
+                            : 'border-forest/15 focus:ring-2 focus:ring-forest/30'
+                        }`}
+                      />
+                      <FormFieldError id="quote-phone-error" error={quoteFieldErrors.phone} />
+                    </div>
                   </div>
                 </div>
 
