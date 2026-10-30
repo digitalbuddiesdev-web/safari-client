@@ -32,7 +32,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
       { label: '12–14th February, 2027', note: 'The Valentine Canopy Escape · Luxurious stay with safaris' },
     ],
     poster: '/assets/img/instagram/Tadoba-Andhari.webp',
-    instagram: 'https://www.instagram.com/',
+    instagram: 'https://www.instagram.com/stories/highlights/18118800712963632/',
   },
   {
     slug: 'pench-mh',
@@ -46,7 +46,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
       { label: '27–29 Nov' },
     ],
     poster: '/assets/img/instagram/Pench.webp',
-    instagram: 'https://www.instagram.com/',
+    instagram: 'https://www.instagram.com/stories/highlights/18118800712963632/',
   },
   {
     slug: 'umred-karhandla',
@@ -60,7 +60,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
       { label: '8–10 Jan 2026' },
     ],
     poster: '/assets/img/instagram/Umred.webp',
-    instagram: 'https://www.instagram.com/',
+    instagram: 'https://www.instagram.com/stories/highlights/18118800712963632/',
   },
   {
     slug: 'tadoba-full-day',
@@ -72,7 +72,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
       { label: 'Jan – Mar 2027' },
     ],
     poster: '/assets/img/instagram/Tadoba-Andhari-Full-Day.webp',
-    instagram: 'https://www.instagram.com/',
+    instagram: 'https://www.instagram.com/stories/highlights/18118800712963632/',
   },
 ];
 
