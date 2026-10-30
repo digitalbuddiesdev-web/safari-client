@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Send,
   ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { cmsService } from '../services/api';
 import { validateName, validateEmail, validatePhone, validateRequired } from '../lib/validation';
@@ -73,19 +74,78 @@ export const UpcomingTourPage: React.FC = () => {
     }
   };
 
-  // If visiting /upcoming-tours (Hub View), show the Upcoming Tours Slider
+  // If visiting /upcoming-tours (Hub View), show a 3 by 3 grid
   if (isHubView) {
     return (
       <div className="bg-sand min-h-screen pt-28 pb-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <UpcomingToursSlider
-            tours={UPCOMING_TOURS}
-            theme="light"
-            title="Upcoming Tours & Departures"
-            subtitle="Fixed-date group departures and bespoke wildlife expeditions across Tadoba, Pench, and Maharashtra’s premier tiger reserves."
-            eyebrow="The Safari Calendar"
-            showViewAll={false}
-          />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="max-w-3xl mb-10">
+            <span className="text-[11px] tracking-widest uppercase text-earth font-bold block mb-1">
+              The Safari Calendar · Limited Seats
+            </span>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-forest tracking-tight">
+              Upcoming Tours &amp; Departures
+            </h1>
+            <p className="text-forest/70 text-xs sm:text-sm leading-relaxed mt-2">
+              Fixed-date group departures and themed escapes &mdash; small groups, confirmed permits, and every seat booked with the forest department in advance.
+            </p>
+          </div>
+
+          {/* 3 by 3 Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {UPCOMING_TOURS.map(t => (
+              <article
+                key={t.slug}
+                className="bg-forest rounded-2xl overflow-hidden border border-sand/15 shadow-lg flex flex-col hover:border-gold/50 transition-colors"
+              >
+                {/* Poster — tapping opens the Instagram post */}
+                <a
+                  href={t.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`View ${t.title} on Instagram`}
+                  className="relative block aspect-[3/4] overflow-hidden group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-forest-muted to-forest-deep" />
+                  <img
+                    src={t.poster}
+                    alt={`${t.title} poster`}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <span className="absolute top-3 left-3 bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
+                    Upcoming Tour
+                  </span>
+                  <span className="absolute top-3 right-3 bg-black/55 backdrop-blur-sm text-sand p-1.5 rounded-full border border-white/20">
+                    <InstagramIcon className="w-3.5 h-3.5" />
+                  </span>
+                </a>
+
+                {/* Actions: Explore Now & Instagram */}
+                <div className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/upcoming-tours/${t.slug}`}
+                      className="flex-1 text-center py-2.5 px-3 bg-gold text-forest font-bold rounded text-xs hover:bg-gold-light transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <span>Explore Now</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                    <a
+                      href={t.instagram}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label="View this tour on Instagram"
+                      className="p-2.5 bg-forest-deep border border-sand/20 text-sand rounded hover:text-gold hover:border-gold/50 transition-colors"
+                    >
+                      <InstagramIcon className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     );
