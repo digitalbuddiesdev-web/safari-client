@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { UPCOMING_TOURS, UpcomingTour } from '../../lib/upcomingTours';
 import InstagramIcon from '../InstagramIcon';
 
@@ -34,8 +34,7 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
     setCanScrollLeft(scrollLeft > 10);
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
 
-    // Calculate approximate active card index for dots/counter
-    const cardWidth = 320 + 24; // card width + gap
+    const cardWidth = 300 + 20; // approximate card width + gap
     const idx = Math.min(Math.round(scrollLeft / cardWidth), tours.length - 1);
     setActiveIndex(Math.max(0, idx));
   };
@@ -58,9 +57,7 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
     const el = trackRef.current;
     if (!el) return;
 
-    // Scroll by roughly 1 card width on mobile or 2 cards on desktop
-    const cardWidth = el.clientWidth > 768 ? 680 : 320;
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+    const scrollAmount = direction === 'left' ? -320 : 320;
     el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
@@ -93,8 +90,8 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
               to="/upcoming-tours"
               className="text-xs font-bold uppercase tracking-wider text-gold hover:text-gold-light flex items-center gap-1.5 transition"
             >
-              <span>View All Tours</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <InstagramIcon className="w-4 h-4" />
+              <span>Follow the Tours</span>
             </Link>
           )}
 
@@ -130,23 +127,25 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
         </div>
       </div>
 
-      {/* Slider Track */}
+      {/* Slider Track with Reverted Original Card Design */}
       <div
         ref={trackRef}
         className="flex gap-5 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0"
         style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
       >
-        {tours.map((tour, idx) => (
+        {tours.map(tour => (
           <article
             key={tour.slug}
-            className={`snap-start shrink-0 w-[84vw] sm:w-[320px] md:w-[340px] rounded-2xl overflow-hidden border shadow-lg flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${
-              isDark
-                ? 'bg-forest border-sand/15 hover:border-gold/50'
-                : 'bg-white border-forest/15 hover:border-forest/40'
-            }`}
+            className="snap-start shrink-0 w-[82vw] sm:w-[280px] lg:w-[295px] bg-forest rounded-2xl overflow-hidden border border-sand/15 shadow-lg flex flex-col hover:border-gold/50 transition-colors"
           >
-            {/* Poster Header */}
-            <div className="relative aspect-[3/4] overflow-hidden group">
+            {/* Poster — tapping opens the Instagram post */}
+            <a
+              href={tour.instagram}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`View ${tour.title} on Instagram`}
+              className="relative block aspect-[3/4] overflow-hidden group"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-forest-muted to-forest-deep" />
               <img
                 src={tour.poster}
@@ -154,76 +153,20 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
                 onError={e => { e.currentTarget.style.display = 'none'; }}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-
-              {/* Status Badges */}
-              <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-                <span className="bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
-                  {tour.travelPeriod || tour.bookingStatus || 'Upcoming Tour'}
-                </span>
-                {tour.availability && (
-                  <span className="bg-black/70 backdrop-blur-sm text-sand text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-white/20 self-start">
-                    {tour.availability}
-                  </span>
-                )}
-              </div>
-
-              {/* Instagram Icon Pill */}
-              <a
-                href={tour.instagram}
-                target="_blank"
-                rel="noreferrer"
-                className="absolute top-3 right-3 bg-black/55 backdrop-blur-sm text-sand p-2 rounded-full border border-white/20 hover:text-gold transition z-10"
-                aria-label={`View ${tour.title} on Instagram`}
-              >
+              <span className="absolute top-3 left-3 bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
+                Upcoming Tour
+              </span>
+              <span className="absolute top-3 right-3 bg-black/55 backdrop-blur-sm text-sand p-1.5 rounded-full border border-white/20">
                 <InstagramIcon className="w-3.5 h-3.5" />
-              </a>
+              </span>
+            </a>
 
-              {/* Subtle bottom gradient on poster */}
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3 text-sand z-10">
-                <span className="text-[10px] uppercase tracking-widest text-gold font-bold block mb-0.5">
-                  Departure Window
-                </span>
-                <span className="text-xs font-semibold block truncate">
-                  {tour.dates[0]?.label || tour.travelPeriod || 'Flexible Bookings'}
-                </span>
-              </div>
-            </div>
-
-            {/* Card Content */}
-            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
-              <div>
-                <h3 className={`font-serif text-lg sm:text-xl font-bold mb-1 leading-snug line-clamp-1 ${isDark ? 'text-sand' : 'text-forest'}`}>
-                  {tour.title}
-                </h3>
-                <p className="text-gold text-xs font-medium italic line-clamp-1">
-                  {tour.tagline}
-                </p>
-                {tour.description ? (
-                  <p className={`text-[11px] ${isDark ? 'text-sand/70' : 'text-forest/70'} line-clamp-2 mt-2 leading-relaxed`}>
-                    {tour.description}
-                  </p>
-                ) : (
-                  <div className="mt-2.5 flex flex-wrap gap-1">
-                    {tour.highlights.slice(0, 3).map(h => (
-                      <span
-                        key={h}
-                        className={`text-[10px] px-2 py-0.5 rounded-md ${
-                          isDark ? 'bg-sand/10 text-sand/80' : 'bg-sand text-forest/80'
-                        }`}
-                      >
-                        {h}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className={`pt-3 border-t flex items-center gap-2 ${isDark ? 'border-sand/10' : 'border-forest/10'}`}>
+            {/* Actions: Explore Now & Instagram */}
+            <div className="p-4">
+              <div className="flex items-center gap-2">
                 <Link
                   to={`/upcoming-tours/${tour.slug}`}
-                  className="flex-1 text-center py-2.5 px-3 bg-gold text-forest font-bold rounded-xl text-xs hover:bg-gold-light transition flex items-center justify-center gap-1.5 shadow"
+                  className="flex-1 text-center py-2.5 px-3 bg-gold text-forest font-bold rounded text-xs hover:bg-gold-light transition-colors flex items-center justify-center gap-1.5"
                 >
                   <span>Explore Now</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -232,12 +175,8 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
                   href={tour.instagram}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label="View on Instagram"
-                  className={`p-2.5 rounded-xl border transition ${
-                    isDark
-                      ? 'bg-forest-deep border-sand/20 text-sand hover:text-gold hover:border-gold/50'
-                      : 'bg-sand/40 border-forest/15 text-forest hover:text-gold hover:border-gold'
-                  }`}
+                  aria-label="View this tour on Instagram"
+                  className="p-2.5 bg-forest-deep border border-sand/20 text-sand rounded hover:text-gold hover:border-gold/50 transition-colors"
                 >
                   <InstagramIcon className="w-4 h-4" />
                 </a>
@@ -265,4 +204,3 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
 };
 
 export default UpcomingToursSlider;
-
