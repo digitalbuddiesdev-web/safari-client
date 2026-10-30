@@ -15,7 +15,6 @@ interface NavLinkItem {
 // Kept deliberately short — everything else lives in the Footer.
 const PRIMARY_LINKS: NavLinkItem[] = [
   { name: 'Reserves', path: '/destinations' },
-  { name: 'Upcoming Tours', path: '/upcoming-tours' },
   { name: 'Our Story', path: '/our-story' },
   { name: 'Safari Map', path: '/map' },
   { name: 'Journal', path: '/journal' },

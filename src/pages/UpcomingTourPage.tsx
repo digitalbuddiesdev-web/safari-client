@@ -21,6 +21,7 @@ import { cmsService } from '../services/api';
 import { validateName, validateEmail, validatePhone, validateRequired } from '../lib/validation';
 import { FormFieldError } from '../components/common/FormFieldError';
 import { UPCOMING_TOURS, getUpcomingTour, UpcomingTour } from '../lib/upcomingTours';
+import { UpcomingToursSlider } from '../components/upcoming/UpcomingToursSlider';
 import InstagramIcon from '../components/InstagramIcon';
 
 const PHONE_NUMBER = '+91 90219 18758';
@@ -352,74 +353,16 @@ export const UpcomingTourPage: React.FC = () => {
           </div>
         </section>
 
-        {/* All Upcoming Tours Grid */}
+        {/* All Upcoming Tours Slider */}
         <section id="upcoming-calendar" className="container mx-auto px-4 sm:px-6 lg:px-8 mb-20 scroll-mt-28">
-          <div className="max-w-2xl mb-8">
-            <span className="text-[11px] tracking-widest uppercase text-earth font-bold block">
-              The Safari Calendar
-            </span>
-            <h2 className="font-serif text-3xl font-bold text-forest">
-              All Upcoming Departures
-            </h2>
-            <p className="text-xs text-forest/70 mt-1">
-              Select an expedition to review itineraries, inclusions, and reserve your seat.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {UPCOMING_TOURS.map(t => (
-              <article
-                key={t.slug}
-                className="bg-forest rounded-2xl overflow-hidden border border-sand/15 shadow-lg flex flex-col hover:border-gold/50 transition-colors"
-              >
-                <div className="relative aspect-[3/4] overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-forest-muted to-forest-deep" />
-                  <img
-                    src={t.poster}
-                    alt={`${t.title} poster`}
-                    onError={e => { e.currentTarget.style.display = 'none'; }}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <span className="absolute top-3 left-3 bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
-                    {t.travelPeriod || 'Upcoming Tour'}
-                  </span>
-                  <a
-                    href={t.instagram}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="absolute top-3 right-3 bg-black/55 backdrop-blur-sm text-sand p-1.5 rounded-full border border-white/20 hover:text-gold transition"
-                    aria-label="View on Instagram"
-                  >
-                    <InstagramIcon className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h3 className="font-serif text-xl font-bold text-sand mb-1">{t.title}</h3>
-                    <p className="text-gold text-xs italic font-medium">{t.tagline}</p>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {t.dates.slice(0, 2).map(d => (
-                        <span key={d.label} className="text-[11px] bg-sand/10 text-sand/80 px-2.5 py-1 rounded-md">
-                          {d.label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-sand/10 flex items-center gap-2">
-                    <Link
-                      to={`/upcoming-tours/${t.slug}`}
-                      className="flex-1 text-center py-2.5 px-3 bg-gold text-forest font-bold rounded text-xs hover:bg-gold-light transition flex items-center justify-center gap-1.5"
-                    >
-                      <span>Explore Now</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <UpcomingToursSlider
+            tours={UPCOMING_TOURS}
+            theme="light"
+            title="All Upcoming Departures"
+            subtitle="Select an expedition to review itineraries, inclusions, and reserve your seat."
+            eyebrow="The Safari Calendar"
+            showViewAll={false}
+          />
         </section>
 
         {/* Booking and Contact Section */}

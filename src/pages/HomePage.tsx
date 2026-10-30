@@ -11,6 +11,7 @@ import { destinationService, cmsService } from '../services/api';
 import { SafariCalendar } from '../components/SafariCalendar';
 import { stateCode, YEARS_OF_EXPERIENCE } from '../lib/site';
 import { UPCOMING_TOURS } from '../lib/upcomingTours';
+import { UpcomingToursSlider } from '../components/upcoming/UpcomingToursSlider';
 import InstagramIcon from '../components/InstagramIcon';
 import { Carousel } from '../components/Carousel';
 import { validateName, validateEmail, validatePhone, validateGuests } from '../lib/validation';
@@ -373,82 +374,17 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 04c. UPCOMING TOURS */}
+      {/* 04c. UPCOMING TOURS SLIDER */}
       <section className="py-20 bg-forest-deep text-sand border-y border-gold/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-            <div>
-              <span className="text-[11px] tracking-widest-safari uppercase text-gold font-bold block">
-                The Safari Calendar · Limited Seats
-              </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-sand mt-1">
-                Upcoming Tours
-              </h2>
-              <p className="text-xs text-sand/70 leading-relaxed mt-2 max-w-xl">
-                Fixed-date group departures and themed escapes &mdash; small groups, confirmed permits, and every seat booked with the forest department in advance.
-              </p>
-            </div>
-            <a
-              href="/upcoming-tours"
-              className="text-xs font-bold uppercase tracking-wider text-gold hover:text-gold-light flex items-center gap-1.5 shrink-0"
-            >
-              <InstagramIcon className="w-4 h-4" />
-              <span>Follow the Tours</span>
-            </a>
-          </div>
-
-          <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-3 sm:pb-0 sm:overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
-            {UPCOMING_TOURS.map(tour => (
-              <article
-                key={tour.slug}
-                className="snap-start shrink-0 w-[85vw] sm:w-auto bg-forest rounded-2xl overflow-hidden border border-sand/15 shadow-lg flex flex-col hover:border-gold/50 transition-colors"
-              >
-                {/* Poster — drop the image in /assets/img/tours/; tapping opens the Instagram post */}
-                <a
-                  href={tour.instagram}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`View ${tour.title} on Instagram`}
-                  className="relative block aspect-[3/4] overflow-hidden group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-forest-muted to-forest-deep" />
-                  <img
-                    src={tour.poster}
-                    alt={`${tour.title} poster`}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <span className="absolute top-3 left-3 bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
-                    Upcoming Tour
-                  </span>
-                  <span className="absolute top-3 right-3 bg-black/55 backdrop-blur-sm text-sand p-1.5 rounded-full border border-white/20">
-                    <InstagramIcon className="w-3.5 h-3.5" />
-                  </span>
-                </a>
-
-                <div className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`/upcoming-tours/${tour.slug}`}
-                      className="flex-1 text-center py-2.5 px-3 bg-gold text-forest font-bold rounded text-xs hover:bg-gold-light transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <span>Explore Now</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                    <a
-                      href={tour.instagram}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="View this tour on Instagram"
-                      className="p-2.5 bg-forest-deep border border-sand/20 text-sand rounded hover:text-gold hover:border-gold/50 transition-colors"
-                    >
-                      <InstagramIcon className="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <UpcomingToursSlider
+            tours={UPCOMING_TOURS}
+            theme="dark"
+            title="Upcoming Tours"
+            subtitle="Fixed-date group departures and themed escapes — small groups, confirmed permits, and every seat booked with the forest department in advance."
+            eyebrow="The Safari Calendar · Limited Seats"
+            showViewAll={true}
+          />
         </div>
       </section>
 
