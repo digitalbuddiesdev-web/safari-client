@@ -100,7 +100,7 @@ export const AdminClientStoriesPage: React.FC = () => {
       rating: 5,
       mediaType: 'reel',
       instagramUrl: 'https://www.instagram.com/shutterandstripes/reel/De1yY0hzcIc/',
-      imageUrl: '/assets/img/instagram/reel-De1yY0hzcIc.jpg',
+      imageUrl: '/assets/img/instagram/reel-De1yY0hzcIc.webp',
       duration: '1:53',
       isFeatured: false,
       tag: 'Tiger Encounter',
@@ -671,7 +671,7 @@ export const AdminClientStoriesPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      placeholder="/assets/img/instagram/Tadoba-Andheri.png"
+                      placeholder="/assets/img/instagram/Tadoba-Andhari.webp"
                       value={editingStory.imageUrl}
                       onChange={e => setEditingStory({ ...editingStory, imageUrl: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none"

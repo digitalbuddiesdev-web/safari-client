@@ -37,7 +37,7 @@ export const ClientStoriesPage: React.FC = () => {
 
   const story = data.featuredReel || data.stories[0];
   const videoSrc = story?.videoUrl || '/assets/video/tadoba-guests-reel.mp4';
-  const posterSrc = story?.imageUrl || '/assets/img/instagram/reel-De1yY0hzcIc.jpg';
+  const posterSrc = story?.imageUrl || '/assets/img/instagram/reel-De1yY0hzcIc.webp';
 
   return (
     <div className="bg-sand min-h-screen text-forest selection:bg-gold selection:text-forest">

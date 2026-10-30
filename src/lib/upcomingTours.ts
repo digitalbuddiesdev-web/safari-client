@@ -30,7 +30,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
       { label: '12–14 Feb', note: 'The Valentine Canopy Escape · Luxury stay' },
       { label: '19–21 Feb' },
     ],
-    poster: '/assets/img/instagram/Tadoba-Andheri.png',
+    poster: '/assets/img/instagram/Tadoba-Andhari.webp',
     instagram: 'https://www.instagram.com/',
   },
   {
@@ -44,7 +44,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
       { label: '20–22 Nov' },
       { label: '27–29 Nov' },
     ],
-    poster: '/assets/img/instagram/Pench.png',
+    poster: '/assets/img/instagram/Pench.webp',
     instagram: 'https://www.instagram.com/',
   },
   {
@@ -70,7 +70,7 @@ export const UPCOMING_TOURS: UpcomingTour[] = [
     dates: [
       { label: 'Jan – Mar 2027' },
     ],
-    poster: '/assets/img/instagram/Tadoba-Andheri-Full-Day.webp',
+    poster: '/assets/img/instagram/Tadoba-Andhari-Full-Day.webp',
     instagram: 'https://www.instagram.com/',
   },
 ];

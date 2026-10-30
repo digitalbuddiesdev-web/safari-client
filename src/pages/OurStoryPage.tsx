@@ -107,7 +107,7 @@ export const OurStoryPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="rounded-3xl overflow-hidden shadow-xl border border-forest/15 aspect-square w-full">
             <img
-              src="/assets/img/Founders/co-founder.png"
+              src="/assets/img/Founders/co-founder.webp"
               alt={`${COFOUNDER_NAME}, Co-Founder`}
               className="w-full h-full object-cover"
             />

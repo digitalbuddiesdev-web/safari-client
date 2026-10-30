@@ -18,7 +18,7 @@ export const ClientStoriesSection: React.FC<ClientStoriesSectionProps> = ({ data
   // Showcase only the single verified real guest story
   const story = data.featuredReel || data.stories[0];
   const videoSrc = story.videoUrl || '/assets/video/tadoba-guests-reel.mp4';
-  const posterSrc = story.imageUrl || '/assets/img/instagram/reel-De1yY0hzcIc.jpg';
+  const posterSrc = story.imageUrl || '/assets/img/instagram/reel-De1yY0hzcIc.webp';
 
   return (
     <section className="py-20 md:py-28 bg-sand-warm border-y border-forest/10 relative overflow-hidden">
