@@ -3,19 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import {
   Check,
   Calendar,
+  Compass,
   AlertCircle,
   CheckCircle2,
   Send,
-  Phone,
-  Mail,
-  MessageCircle,
-  Sparkles,
-  MapPin,
   ShieldCheck,
-  UserCheck,
-  Car,
-  Utensils,
-  Users,
 } from 'lucide-react';
 import { cmsService } from '../services/api';
 import { validateName, validateEmail, validatePhone, validateRequired } from '../lib/validation';
@@ -24,22 +16,12 @@ import { UPCOMING_TOURS, getUpcomingTour } from '../lib/upcomingTours';
 import { UpcomingToursSlider } from '../components/upcoming/UpcomingToursSlider';
 import InstagramIcon from '../components/InstagramIcon';
 
-const PHONE_NUMBER = '+91 90219 18758';
-const PHONE_CLEAN = '919021918758';
-const EMAIL_ADDRESS = 'bookings@shutterandstripessafaris.com';
-
 export const UpcomingTourPage: React.FC = () => {
   const { slug } = useParams<{ slug?: string }>();
   const tour = slug ? getUpcomingTour(slug) : undefined;
   const isHubView = !slug;
 
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    preferredDates: '',
-    message: '',
-  });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', preferredDates: '', message: '' });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -49,7 +31,7 @@ export const UpcomingTourPage: React.FC = () => {
     setFieldErrors(prev => (prev[field] ? { ...prev, [field]: null } : prev));
   };
 
-  const handleSubmit = async (e: React.FormEvent, tourTitle?: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const errors: Record<string, string | null> = {};
@@ -79,9 +61,9 @@ export const UpcomingTourPage: React.FC = () => {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
-        preferredDates: form.preferredDates || tour?.travelPeriod || 'February – April 2027',
+        preferredDates: form.preferredDates,
         message: form.message.trim(),
-        destination: tourTitle || tour?.title || 'Maharashtra Wildlife Safaris',
+        destination: tour?.title || 'Upcoming Safari Tour'
       });
       setSubmitted(true);
     } catch (err: any) {
@@ -91,511 +73,310 @@ export const UpcomingTourPage: React.FC = () => {
     }
   };
 
-  const inputClass =
-    'w-full px-3.5 py-2.5 bg-sand/40 border border-forest/15 rounded-xl text-xs text-forest placeholder:text-forest/40 focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold transition';
-
-  // =========================================================================
-  // 1. COMPACT HUB VIEW: /upcoming-tours
-  // =========================================================================
+  // If visiting /upcoming-tours (Hub View), show the Upcoming Tours Slider
   if (isHubView) {
     return (
-      <div className="bg-[#FAF7F2] text-forest min-h-screen pt-28 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          
-          {/* Header */}
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest/5 border border-forest/15 text-gold text-[10px] font-bold uppercase tracking-widest">
-              <Sparkles className="w-3 h-3" />
-              <span>The Safari Calendar · 2027 Season</span>
-            </span>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-forest tracking-tight">
-              Upcoming Wildlife Tours
-            </h1>
-            <p className="text-forest/70 text-xs sm:text-sm leading-relaxed">
-              Fixed-date group departures and bespoke expeditions across Tadoba, Pench, and Maharashtra’s premier tiger reserves.
-            </p>
-          </div>
-
-          {/* Upcoming Tours Slider */}
-          <section id="upcoming-calendar" className="scroll-mt-28">
-            <UpcomingToursSlider
-              tours={UPCOMING_TOURS}
-              theme="light"
-              title="All Departures"
-              subtitle="Select an expedition to view itinerary details and reserve your slots."
-              eyebrow="Confirmed Permits &amp; Native Guides"
-              showViewAll={false}
-            />
-          </section>
-
-          {/* Quick Booking & Inquiries Desk */}
-          <section className="bg-white rounded-3xl p-6 sm:p-8 border border-forest/15 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-5 space-y-4">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gold block mb-1">
-                  Direct Safari Desk
-                </span>
-                <h2 className="font-serif text-2xl font-bold text-forest">
-                  Reserve Your Safari
-                </h2>
-                <p className="text-forest/70 text-xs mt-1 leading-relaxed">
-                  Have questions about dates, permits, or custom group circuits? Connect directly with our field naturalists.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <a
-                  href={`https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent('Hi Shutter & Stripes, I would like to enquire about upcoming safaris for 2027.')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp Desk</span>
-                </a>
-                <a
-                  href={`tel:${PHONE_CLEAN}`}
-                  className="p-3 bg-forest hover:bg-forest-light text-sand rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow"
-                >
-                  <Phone className="w-4 h-4 text-gold" />
-                  <span>Call Desk</span>
-                </a>
-              </div>
-
-              <a
-                href={`mailto:${EMAIL_ADDRESS}`}
-                className="w-full flex items-center justify-center gap-2 p-2.5 border border-forest/15 rounded-xl text-xs text-forest/80 hover:bg-sand/30 transition truncate"
-              >
-                <Mail className="w-3.5 h-3.5 text-gold shrink-0" />
-                <span className="truncate">{EMAIL_ADDRESS}</span>
-              </a>
-            </div>
-
-            <div className="lg:col-span-7 bg-sand/30 p-5 sm:p-6 rounded-2xl border border-forest/10">
-              {submitted ? (
-                <div className="py-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-forest text-gold flex items-center justify-center mx-auto shadow-md">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-serif text-lg font-bold text-forest">Enquiry Received</h3>
-                  <p className="text-forest/70 text-xs max-w-sm mx-auto">
-                    A naturalist will respond via WhatsApp or email within 4 business hours.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSubmitted(false);
-                      setForm({ name: '', email: '', phone: '', preferredDates: '', message: '' });
-                    }}
-                    className="px-4 py-1.5 bg-forest text-sand rounded-xl text-xs font-bold uppercase tracking-wider"
-                  >
-                    Submit Another
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={e => handleSubmit(e, 'General Upcoming Safari Enquiry')} className="space-y-3">
-                  {error && (
-                    <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center space-x-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{error}</span>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={form.name}
-                        onChange={e => {
-                          setForm({ ...form, name: e.target.value });
-                          clearFieldError('name');
-                        }}
-                        placeholder="Your Name *"
-                        className={`${inputClass} ${fieldErrors.name ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
-                      />
-                      <FormFieldError id="hub-name-err" error={fieldErrors.name} />
-                    </div>
-                    <div>
-                      <input
-                        type="email"
-                        value={form.email}
-                        onChange={e => {
-                          setForm({ ...form, email: e.target.value });
-                          clearFieldError('email');
-                        }}
-                        placeholder="Email Address *"
-                        className={`${inputClass} ${fieldErrors.email ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
-                      />
-                      <FormFieldError id="hub-email-err" error={fieldErrors.email} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="tel"
-                        value={form.phone}
-                        onChange={e => {
-                          setForm({ ...form, phone: e.target.value });
-                          clearFieldError('phone');
-                        }}
-                        placeholder="Phone / WhatsApp *"
-                        className={`${inputClass} ${fieldErrors.phone ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
-                      />
-                      <FormFieldError id="hub-phone-err" error={fieldErrors.phone} />
-                    </div>
-                    <div>
-                      <select
-                        value={form.preferredDates}
-                        onChange={e => setForm({ ...form, preferredDates: e.target.value })}
-                        className={inputClass}
-                      >
-                        <option value="February – April 2027">February – April 2027</option>
-                        <option value="February 2027">February 2027</option>
-                        <option value="March 2027">March 2027</option>
-                        <option value="April 2027">April 2027</option>
-                        <option value="Flexible / Other">Flexible / Custom dates</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <textarea
-                      rows={2}
-                      value={form.message}
-                      onChange={e => {
-                        setForm({ ...form, message: e.target.value });
-                        clearFieldError('message');
-                      }}
-                      placeholder="Tour interest, group size, special requirements *"
-                      className={`${inputClass} ${fieldErrors.message ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
-                    />
-                    <FormFieldError id="hub-msg-err" error={fieldErrors.message} />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 bg-forest hover:bg-forest-light text-sand font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow"
-                  >
-                    {loading ? (
-                      <span>Sending...</span>
-                    ) : (
-                      <>
-                        <Send className="w-3.5 h-3.5 text-gold" />
-                        <span>Book Now · Submit Safari Enquiry</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-          </section>
+      <div className="bg-sand min-h-screen pt-28 pb-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <UpcomingToursSlider
+            tours={UPCOMING_TOURS}
+            theme="light"
+            title="Upcoming Tours & Departures"
+            subtitle="Fixed-date group departures and bespoke wildlife expeditions across Tadoba, Pench, and Maharashtra’s premier tiger reserves."
+            eyebrow="The Safari Calendar"
+            showViewAll={false}
+          />
         </div>
       </div>
     );
   }
 
-  // =========================================================================
-  // 2. TOUR NOT FOUND
-  // =========================================================================
   if (!tour) {
     return (
-      <div className="bg-[#FAF7F2] min-h-screen pt-36 pb-20 container mx-auto px-4 text-center">
-        <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-forest/10 shadow-sm">
+      <div className="bg-sand min-h-screen pt-36 pb-20 container mx-auto px-4 text-center">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-forest/10 shadow-sm">
           <AlertCircle className="w-12 h-12 text-earth mx-auto mb-4" />
           <h2 className="font-serif text-2xl font-bold text-forest mb-2">Tour Not Found</h2>
-          <p className="text-forest/70 text-xs mb-6">
+          <p className="text-forest/70 text-sm mb-6">
             This upcoming tour does not exist or may have been updated.
           </p>
           <Link
-            to="/upcoming-tours"
+            to="/"
             className="px-6 py-2.5 bg-forest text-sand rounded-xl text-xs font-bold uppercase tracking-wider inline-block"
           >
-            View All Upcoming Tours
+            Back to Home
           </Link>
         </div>
       </div>
     );
   }
 
-  // =========================================================================
-  // 3. COMPACT INDIVIDUAL TOUR DETAIL VIEW: /upcoming-tours/:slug
-  // =========================================================================
+  const inputClass =
+    'w-full px-4 py-3 bg-sand/30 border border-forest/15 rounded-xl text-xs text-forest focus:outline-none focus:ring-2 focus:ring-forest/30';
+
   return (
-    <div className="bg-[#FAF7F2] text-forest min-h-screen pt-24 pb-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        
+    <div className="bg-sand min-h-screen pt-28 pb-20">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <div className="flex items-center flex-wrap gap-2 text-xs font-semibold text-forest/60">
+        <div className="flex items-center flex-wrap gap-2 text-xs font-semibold text-forest/60 mb-6">
           <Link to="/" className="hover:text-gold transition">Home</Link>
           <span>/</span>
-          <Link to="/upcoming-tours" className="hover:text-gold transition text-forest">Upcoming Tours</Link>
+          <span className="text-forest">Upcoming Tours</span>
           <span>/</span>
           <span className="text-gold truncate">{tour.title}</span>
         </div>
 
-        {/* Compact 2-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Poster + Direct Contacts (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-forest border border-forest/15 shadow-xl group">
-              <img
-                src={tour.poster}
-                alt={`${tour.title} poster`}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-3 left-3 flex flex-col gap-1">
-                <span className="bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
-                  {tour.travelPeriod || 'Upcoming Tour'}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+          {/* Left: poster */}
+          <div className="lg:col-span-2">
+            <div className="lg:sticky lg:top-28 space-y-4">
+              <div className="relative rounded-3xl overflow-hidden border border-forest/15 shadow-xl bg-forest">
+                <div className="relative aspect-[3/4]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-forest-muted to-forest-deep" />
+                  <img
+                    src={tour.poster}
+                    alt={`${tour.title} poster`}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    className="relative w-full h-full object-cover"
+                  />
+                </div>
+                <span className="absolute top-4 left-4 bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-md shadow">
+                  Upcoming Tour
                 </span>
-                {tour.availability && (
-                  <span className="bg-black/70 backdrop-blur-sm text-sand text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-white/20 self-start">
-                    {tour.availability}
-                  </span>
-                )}
               </div>
               <a
                 href={tour.instagram}
                 target="_blank"
                 rel="noreferrer"
-                className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-sand p-2 rounded-full border border-white/20 hover:text-gold transition"
-                aria-label="View on Instagram"
+                className="flex items-center justify-center gap-2 w-full py-3 border border-forest/30 text-forest rounded-xl font-semibold uppercase tracking-wider text-xs hover:bg-forest hover:text-sand transition"
               >
-                <InstagramIcon className="w-3.5 h-3.5" />
+                <InstagramIcon className="w-4 h-4" />
+                <span>View this tour on Instagram</span>
               </a>
-            </div>
-
-            {/* Direct Quick Desk */}
-            <div className="grid grid-cols-2 gap-2">
-              <a
-                href={`https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(`Hi Shutter & Stripes, I would like to book ${tour.title} (${tour.travelPeriod || '2027'})`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>WhatsApp</span>
-              </a>
-              <a
-                href={`tel:${PHONE_CLEAN}`}
-                className="py-2.5 px-3 bg-forest hover:bg-forest-light text-sand rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow"
-              >
-                <Phone className="w-3.5 h-3.5 text-gold" />
-                <span>Call Desk</span>
-              </a>
-            </div>
-
-            {/* Compact Metrics */}
-            <div className="grid grid-cols-3 gap-2 text-center bg-white p-3 rounded-xl border border-forest/10 text-xs">
-              <div>
-                <span className="text-[10px] text-forest/50 font-bold block uppercase">Group</span>
-                <span className="font-bold text-forest">Max 6 Pax</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-forest/50 font-bold block uppercase">Transfers</span>
-                <span className="font-bold text-forest">Nagpur AC</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-forest/50 font-bold block uppercase">Meals</span>
-                <span className="font-bold text-forest">All Meals</span>
-              </div>
             </div>
           </div>
 
-          {/* Right Column: Tour Details + Booking Form (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* Title & Overview */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-gold block">
-                {tour.bookingStatus || 'Advance Safari Bookings Open'}
-              </span>
-              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-forest leading-tight">
+          {/* Right: info + enquiry form */}
+          <div className="lg:col-span-3 space-y-8">
+            <div>
+              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-forest tracking-tight">
                 {tour.title}
               </h1>
-              <p className="text-gold text-xs font-semibold italic">{tour.tagline}</p>
-              {tour.description && (
-                <p className="text-forest/70 text-xs sm:text-sm leading-relaxed pt-1">
-                  {tour.description}
-                </p>
-              )}
+              <p className="text-gold font-semibold italic mt-1">{tour.tagline}</p>
             </div>
 
-            {/* Highlights Grid */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-forest/10 space-y-2.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-forest/60 block">
-                What We Offer
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {tour.highlights.map(h => (
-                  <div key={h} className="flex items-center gap-2 text-xs text-forest/80">
-                    <Check className="w-3.5 h-3.5 text-gold shrink-0" />
-                    <span>{h}</span>
-                  </div>
-                ))}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-forest/15 shadow-sm space-y-6">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-forest mb-3 flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-gold" />
+                  <span>What's Included</span>
+                </h2>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {tour.highlights.map(h => (
+                    <li key={h} className="flex items-start gap-2 text-xs text-forest/80 leading-snug">
+                      <Check className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              {/* Connected Parks if available */}
-              {tour.premiumParks && (
-                <div className="pt-3 border-t border-forest/10 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] font-bold uppercase text-forest/50 mr-1">Parks:</span>
-                  {tour.premiumParks.map(p => (
-                    <Link
-                      key={p.slug}
-                      to={`/destinations/${p.slug}`}
-                      className="px-2.5 py-0.5 bg-sand/60 hover:bg-gold hover:text-forest border border-forest/10 rounded-md text-[11px] font-semibold transition"
+              <div className="pt-2 border-t border-forest/10">
+                <h2 className="font-serif text-xl font-bold text-forest mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-gold" />
+                  <span>Departure Dates</span>
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {tour.dates.map(d => (
+                    <span
+                      key={d.label}
+                      title={d.note}
+                      className={`text-xs font-medium rounded-lg px-3 py-1.5 border ${
+                        d.note
+                          ? 'bg-gold/15 border-gold/40 text-forest'
+                          : 'bg-sand border-forest/15 text-forest/80'
+                      }`}
                     >
-                      {p.name}
-                    </Link>
+                      {d.label}{d.note ? ' ★' : ''}
+                    </span>
                   ))}
                 </div>
-              )}
-
-              {/* Founder quote if available */}
-              {tour.founderNote && (
-                <div className="pt-2 border-t border-forest/10 text-xs text-forest/70 italic">
-                  “{tour.founderNote.quote.replace(/[“”"]/g, '')}”
-                  <span className="not-italic text-forest/50 ml-1.5 font-semibold text-[10px]">— Sachin Neware (18+ Yrs Native Naturalist)</span>
-                </div>
-              )}
+                {tour.dates.some(d => d.note) && (
+                  <p className="text-[11px] text-forest/50 mt-2">★ Themed / special departure — hover for details.</p>
+                )}
+              </div>
             </div>
 
-            {/* Compact Booking Form */}
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-forest/15 shadow-lg space-y-4">
-              <div>
-                <h2 className="font-serif text-lg font-bold text-forest">
-                  Book Your Safari / Enquiry
-                </h2>
-                <p className="text-forest/60 text-xs">
-                  Fill in your preferred dates and group size. A naturalist will confirm available slots.
-                </p>
-              </div>
-
+            {/* General enquiry form */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-forest/15 shadow-xl">
               {submitted ? (
-                <div className="py-6 text-center space-y-2 bg-sand/30 rounded-xl p-4 border border-forest/10">
-                  <CheckCircle2 className="w-8 h-8 text-gold mx-auto" />
-                  <h3 className="font-serif text-base font-bold text-forest">Safari Enquiry Received</h3>
-                  <p className="text-forest/70 text-xs">
-                    We will get back via WhatsApp/phone within 4 business hours.
+                <div className="py-12 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-forest text-gold flex items-center justify-center mx-auto shadow-md">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-serif text-2xl font-bold text-forest">Enquiry Received</h3>
+                  <p className="text-forest/70 text-sm max-w-md mx-auto leading-relaxed">
+                    Thanks for your interest in <strong>{tour.title}</strong>. A naturalist will respond
+                    via email or phone within 4 business hours.
                   </p>
                   <button
                     onClick={() => {
                       setSubmitted(false);
                       setForm({ name: '', email: '', phone: '', preferredDates: '', message: '' });
                     }}
-                    className="px-4 py-1.5 bg-forest text-sand rounded-lg text-xs font-bold uppercase"
+                    className="px-6 py-2.5 bg-forest text-sand rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-forest/90 transition"
                   >
-                    Submit Another
+                    Send Another Enquiry
                   </button>
                 </div>
               ) : (
-                <form onSubmit={e => handleSubmit(e, tour.title)} className="space-y-3">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <h2 className="font-serif text-2xl font-bold text-forest mb-1">General Enquiry</h2>
+                    <p className="text-forest/60 text-xs">
+                      Have a question about this departure? Send a note and a naturalist will get back within 4 business hours.
+                    </p>
+                  </div>
+
                   {error && (
-                    <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center space-x-2">
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center space-x-2">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>{error}</span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                      <label htmlFor="tour-name" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                        Your Full Name *
+                      </label>
                       <input
+                        id="tour-name"
                         type="text"
                         value={form.name}
                         onChange={e => {
                           setForm({ ...form, name: e.target.value });
                           clearFieldError('name');
                         }}
-                        placeholder="Your Name *"
+                        onBlur={() => {
+                          const err = validateName(form.name, 'Your name');
+                          if (err) setFieldErrors(prev => ({ ...prev, name: err }));
+                        }}
+                        placeholder="Dr. Anand Deshmukh"
+                        aria-invalid={!!fieldErrors.name}
+                        aria-describedby={fieldErrors.name ? 'tour-name-error' : undefined}
                         className={`${inputClass} ${fieldErrors.name ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                       />
-                      <FormFieldError id="t-name-err" error={fieldErrors.name} />
+                      <FormFieldError id="tour-name-error" error={fieldErrors.name} />
                     </div>
                     <div>
+                      <label htmlFor="tour-email" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                        Email Address *
+                      </label>
                       <input
+                        id="tour-email"
                         type="email"
                         value={form.email}
                         onChange={e => {
                           setForm({ ...form, email: e.target.value });
                           clearFieldError('email');
                         }}
-                        placeholder="Email Address *"
+                        onBlur={() => {
+                          const err = validateEmail(form.email);
+                          if (err) setFieldErrors(prev => ({ ...prev, email: err }));
+                        }}
+                        placeholder="anand@example.com"
+                        aria-invalid={!!fieldErrors.email}
+                        aria-describedby={fieldErrors.email ? 'tour-email-error' : undefined}
                         className={`${inputClass} ${fieldErrors.email ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                       />
-                      <FormFieldError id="t-email-err" error={fieldErrors.email} />
+                      <FormFieldError id="tour-email-error" error={fieldErrors.email} />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                      <label htmlFor="tour-phone" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                        Phone / WhatsApp Number *
+                      </label>
                       <input
+                        id="tour-phone"
                         type="tel"
                         value={form.phone}
                         onChange={e => {
                           setForm({ ...form, phone: e.target.value });
                           clearFieldError('phone');
                         }}
-                        placeholder="Phone / WhatsApp *"
+                        onBlur={() => {
+                          const err = validatePhone(form.phone);
+                          if (err) setFieldErrors(prev => ({ ...prev, phone: err }));
+                        }}
+                        placeholder="+91 98765 43210"
+                        aria-invalid={!!fieldErrors.phone}
+                        aria-describedby={fieldErrors.phone ? 'tour-phone-error' : undefined}
                         className={`${inputClass} ${fieldErrors.phone ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                       />
-                      <FormFieldError id="t-phone-err" error={fieldErrors.phone} />
+                      <FormFieldError id="tour-phone-error" error={fieldErrors.phone} />
                     </div>
                     <div>
+                      <label htmlFor="tour-dates" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                        Preferred Departure Date (Optional)
+                      </label>
                       <select
+                        id="tour-dates"
                         value={form.preferredDates}
                         onChange={e => setForm({ ...form, preferredDates: e.target.value })}
                         className={inputClass}
                       >
+                        <option value="">Flexible / Not sure yet</option>
                         {tour.dates.map(d => (
                           <option key={d.label} value={d.label}>
-                            {d.label} {d.note ? `(${d.note})` : ''}
+                            {d.label}{d.note ? ' ★' : ''}
                           </option>
                         ))}
-                        <option value="Flexible / Other">Flexible / Custom dates</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
+                    <label htmlFor="tour-message" className="block text-xs font-bold uppercase tracking-wider text-forest/70 mb-1.5">
+                      Your Question / Requirements *
+                    </label>
                     <textarea
-                      rows={2}
+                      id="tour-message"
+                      rows={5}
                       value={form.message}
                       onChange={e => {
                         setForm({ ...form, message: e.target.value });
                         clearFieldError('message');
                       }}
-                      placeholder="Special requirements, party size, camera gear *"
-                      className={`${inputClass} ${fieldErrors.message ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
+                      onBlur={() => {
+                        const err = validateRequired(form.message, 'Your Question / Requirements', 5);
+                        if (err) setFieldErrors(prev => ({ ...prev, message: err }));
+                      }}
+                      placeholder={`I'm interested in the ${tour.title} departure. Please share availability, pricing and what's included...`}
+                      aria-invalid={!!fieldErrors.message}
+                      aria-describedby={fieldErrors.message ? 'tour-message-error' : undefined}
+                      className={`${inputClass} resize-none leading-relaxed ${fieldErrors.message ? 'border-red-500 ring-1 ring-red-400/20' : ''}`}
                     />
-                    <FormFieldError id="t-msg-err" error={fieldErrors.message} />
+                    <FormFieldError id="tour-message-error" error={fieldErrors.message} />
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 bg-gold hover:bg-gold-light text-forest font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md"
+                    className="w-full py-4 bg-forest text-sand rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-forest/90 transition shadow-lg flex items-center justify-center space-x-2 disabled:opacity-50"
                   >
                     {loading ? (
-                      <span>Sending Booking Request...</span>
+                      <span>Sending...</span>
                     ) : (
                       <>
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Book Now · Confirm Safari Details</span>
+                        <Send className="w-4 h-4 text-gold" />
+                        <span>Send Safari Enquiry</span>
                       </>
                     )}
                   </button>
-
-                  <div className="flex items-center justify-between text-[10px] text-forest/60 pt-1">
-                    <span className="flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-gold" />
-                      <span>Forest Department Permits</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <UserCheck className="w-3 h-3 text-gold" />
-                      <span>Native Local Guides</span>
-                    </span>
-                  </div>
+                  <p className="text-[11px] text-forest/50 text-center flex items-center justify-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-gold" />
+                    <span>No advance payment needed to enquire. Permits confirmed directly with forest department.</span>
+                  </p>
                 </form>
               )}
             </div>
