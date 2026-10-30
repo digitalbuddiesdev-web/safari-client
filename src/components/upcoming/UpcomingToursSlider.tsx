@@ -90,8 +90,8 @@ export const UpcomingToursSlider: React.FC<UpcomingToursSliderProps> = ({
               to="/upcoming-tours"
               className="text-xs font-bold uppercase tracking-wider text-gold hover:text-gold-light flex items-center gap-1.5 transition"
             >
-              <InstagramIcon className="w-4 h-4" />
-              <span>Follow the Tours</span>
+              <span>Explore Tours</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           )}
 
