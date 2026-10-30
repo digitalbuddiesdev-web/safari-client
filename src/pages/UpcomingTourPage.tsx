@@ -92,12 +92,12 @@ export const UpcomingTourPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 3 by 3 Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {/* 2x2 Grid on Mobile, 3x3 on Desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6 lg:gap-8">
             {UPCOMING_TOURS.map(t => (
               <article
                 key={t.slug}
-                className="bg-forest rounded-2xl overflow-hidden border border-sand/15 shadow-lg flex flex-col hover:border-gold/50 transition-colors"
+                className="bg-forest rounded-xl sm:rounded-2xl overflow-hidden border border-sand/15 shadow-lg flex flex-col hover:border-gold/50 transition-colors"
               >
                 {/* Poster — tapping opens the Instagram post */}
                 <a
@@ -114,32 +114,32 @@ export const UpcomingTourPage: React.FC = () => {
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <span className="absolute top-3 left-3 bg-gold text-forest text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow">
+                  <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-gold text-forest text-[8px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded sm:rounded-md shadow">
                     Upcoming Tour
                   </span>
-                  <span className="absolute top-3 right-3 bg-black/55 backdrop-blur-sm text-sand p-1.5 rounded-full border border-white/20">
-                    <InstagramIcon className="w-3.5 h-3.5" />
+                  <span className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-black/55 backdrop-blur-sm text-sand p-1 sm:p-1.5 rounded-full border border-white/20">
+                    <InstagramIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </span>
                 </a>
 
                 {/* Actions: Explore Now & Instagram */}
-                <div className="p-4">
-                  <div className="flex items-center gap-2">
+                <div className="p-2.5 sm:p-4">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-2">
                     <Link
                       to={`/upcoming-tours/${t.slug}`}
-                      className="flex-1 text-center py-2.5 px-3 bg-gold text-forest font-bold rounded text-xs hover:bg-gold-light transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 text-center py-2 px-2 sm:py-2.5 sm:px-3 bg-gold text-forest font-bold rounded-lg sm:rounded text-[11px] sm:text-xs hover:bg-gold-light transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
                     >
                       <span>Explore Now</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </Link>
                     <a
                       href={t.instagram}
                       target="_blank"
                       rel="noreferrer"
                       aria-label="View this tour on Instagram"
-                      className="p-2.5 bg-forest-deep border border-sand/20 text-sand rounded hover:text-gold hover:border-gold/50 transition-colors"
+                      className="p-2 sm:p-2.5 bg-forest-deep border border-sand/20 text-sand rounded-lg sm:rounded hover:text-gold hover:border-gold/50 transition-colors flex items-center justify-center"
                     >
-                      <InstagramIcon className="w-4 h-4" />
+                      <InstagramIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </a>
                   </div>
                 </div>
