@@ -95,6 +95,7 @@ export const App: React.FC = () => {
           <Route path="/client-stories" element={<PublicRoute><ClientStoriesPage /></PublicRoute>} />
           <Route path="/faqs" element={<PublicRoute><FAQPage /></PublicRoute>} />
           <Route path="/contact" element={<PublicRoute><ContactPage /></PublicRoute>} />
+          <Route path="/upcoming-tours" element={<PublicRoute><UpcomingTourPage /></PublicRoute>} />
           <Route path="/upcoming-tours/:slug" element={<PublicRoute><UpcomingTourPage /></PublicRoute>} />
 
           {/* Booking and Tracking (admin auth lives at /login) */}

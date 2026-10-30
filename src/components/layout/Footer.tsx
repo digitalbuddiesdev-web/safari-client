@@ -80,6 +80,7 @@ export const Footer: React.FC = () => {
 
           {/* Explore */}
           <FooterColumn title="Explore" className="lg:col-span-2">
+            <li><Link to="/upcoming-tours" className={linkClass}>Upcoming Tours</Link></li>
             <li><Link to="/destinations" className={linkClass}>Destinations</Link></li>
             <li><Link to="/map" className={linkClass}>Interactive Map</Link></li>
             <li><Link to="/compare" className={linkClass}>Compare Reserves</Link></li>
