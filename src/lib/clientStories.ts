@@ -28,9 +28,9 @@ export const DEFAULT_CLIENT_STORIES: ClientStory[] = [
   {
     id: 'story-israel-guests-tadoba',
     name: 'Guests from Israel',
-    location: 'Tel Aviv, Israel',
+    location: '',
     reserve: 'Tadoba-Andhari Tiger Reserve',
-    safariType: 'International Wildlife & Tiger Safari',
+    safariType: '',
     quote: 'From Israel to the heart of Tadoba — hear it from our guests themselves! Their genuine experience, their words and memories made in the wild with Shutter & Stripes.',
     rating: 5,
     mediaType: 'reel',

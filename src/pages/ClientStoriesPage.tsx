@@ -6,11 +6,8 @@ import {
   Compass, 
   Play, 
   ExternalLink, 
-  CheckCircle2, 
   Sparkles,
   ArrowRight,
-  ShieldCheck,
-  Camera,
   Film,
   X
 } from 'lucide-react';
@@ -69,21 +66,6 @@ export const ClientStoriesPage: React.FC = () => {
           <p className="mt-6 text-base sm:text-lg text-sand/80 max-w-2xl mx-auto leading-relaxed">
             Real moments, unscripted wildlife encounters, and heartfelt stories from travelers who explored the tiger heartlands of Central India with our naturalists.
           </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold uppercase tracking-wider text-sand/75">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-forest-deep/60 rounded-lg border border-gold/20">
-              <CheckCircle2 className="w-4 h-4 text-gold" />
-              <span>98.4% Sighting Success Rate</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-forest-deep/60 rounded-lg border border-gold/20">
-              <Camera className="w-4 h-4 text-gold" />
-              <span>Native Field Photographers</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-forest-deep/60 rounded-lg border border-gold/20">
-              <ShieldCheck className="w-4 h-4 text-gold" />
-              <span>100% Ethical Safari Protocols</span>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -209,9 +191,11 @@ export const ClientStoriesPage: React.FC = () => {
                     <h3 className="font-serif font-bold text-forest text-lg">
                       {story.name}
                     </h3>
-                    <p className="text-xs text-forest/60 uppercase tracking-wider">
-                      {story.location} &bull; {story.safariType}
-                    </p>
+                    {[story.location, story.safariType].filter(Boolean).length > 0 && (
+                      <p className="text-xs text-forest/60 uppercase tracking-wider">
+                        {[story.location, story.safariType].filter(Boolean).join(' • ')}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-3">

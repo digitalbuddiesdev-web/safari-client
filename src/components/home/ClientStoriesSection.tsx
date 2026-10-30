@@ -147,9 +147,11 @@ export const ClientStoriesSection: React.FC<ClientStoriesSectionProps> = ({ data
                 <h3 className="font-serif font-bold text-forest text-lg">
                   {story.name}
                 </h3>
-                <p className="text-xs text-forest/60 uppercase tracking-wider">
-                  {story.location} &bull; {story.safariType}
-                </p>
+                {[story.location, story.safariType].filter(Boolean).length > 0 && (
+                  <p className="text-xs text-forest/60 uppercase tracking-wider">
+                    {[story.location, story.safariType].filter(Boolean).join(' • ')}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
